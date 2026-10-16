@@ -1,14 +1,20 @@
 {
-  "name": "ticketing-capstone",
-  "version": "0.1.0",
+  "name": "das-2026-capstone-project",
+  "version": "1.0.0",
   "private": true,
-  "description": "Event Ticketing and Booking - course capstone, built one milestone per Build session",
   "type": "module",
-  "engines": {
-    "node": ">=22.13"
-  },
   "scripts": {
-    "demo": "node scripts/demo.js",
-    "benchmark": "node scripts/benchmark-lookup.js"
+    "start": "node --disable-warning=ExperimentalWarning start.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "demo": "node demo.js",
+    "demo:search": "node demo-search.js",
+    "demo:states": "node demo-states.js",
+    "demo:api": "node --disable-warning=ExperimentalWarning demo-api.js",
+    "demo:oversell": "node --disable-warning=ExperimentalWarning demo-oversell.js",
+    "benchmark": "node benchmark.js",
+    "test": "node --disable-warning=ExperimentalWarning --test"
+  },
+  "engines": {
+    "node": ">=22.13.0"
   }
 }
