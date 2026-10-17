@@ -1,0 +1,60 @@
+// ROUTES layer: decides exactly what the outside world gets to see.
+// Each presenter picks fields by name (a whitelist), so a new private field
+// (like the waitlist of names) can never leak by accident.
+
+export function presentTier(tier) {
+  return {
+    id: tier.id,
+    name: tier.name,
+    priceCents: tier.priceCents,
+    capacity: tier.capacity,
+    seatsLeft: tier.capacity - tier.sold,
+  };
+}
+
+export function presentEvent(event) {
+  return {
+    id: event.id,
+    title: event.title,
+    city: event.city,
+    venue: event.venue,
+    date: event.date,
+    status: event.status,
+    tiers: [...event.tiers.values()].map(presentTier),
+  };
+}
+
+export function presentBooking(booking) {
+  return {
+    ref: booking.ref,
+    eventId: booking.eventId,
+    tierId: booking.tierId,
+    buyerName: booking.buyerName,
+    quantity: booking.quantity,
+    totalCents: booking.totalCents,
+    status: booking.status,
+    holdExpiresAt: booking.holdExpiresAt ?? null,
+    refundCents: booking.refundCents ?? null,
+  };
+}
+
+// A waitlist entry as its OWNER sees it. Never other people's names or ids.
+export function presentWaitlistEntry(entry) {
+  return {
+    id: entry.id,
+    eventId: entry.eventId,
+    tierId: entry.tierId,
+    status: entry.status,
+    position: entry.position ?? null,
+    offerExpiresAt: entry.offerExpiresAt ?? null,
+  };
+}
+
+export function presentRefund(refund) {
+  return { percent: refund.percent, refundCents: refund.refundCents, paid: refund.paid };
+}
+
+// Never includes the password hash. Only these four fields ever leave the server.
+export function presentUser(user) {
+  return { id: user.id, name: user.name, email: user.email, role: user.role };
+}
