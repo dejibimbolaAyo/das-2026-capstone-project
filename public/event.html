@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event - Event Ticketing</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">Event Ticketing</a>
+      <span class="tagline">Choose your tickets</span>
+      <nav id="account-nav" class="account-nav" aria-label="Account"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="breadcrumb"><a href="/">All events</a></p>
+
+    <section class="card" aria-labelledby="event-title">
+      <h1 id="event-title">Loading...</h1>
+      <p id="event-meta" class="meta"></p>
+    </section>
+
+    <h2 class="section-heading">Tickets</h2>
+    <section id="tiers" class="tiers" aria-label="Ticket tiers"></section>
+
+    <section id="checkout" class="card checkout" aria-label="Checkout" hidden></section>
+  </main>
+
+  <footer class="wrap footer">
+    <p class="meta">Seats are held for a short time while you pay. Booking needs an account.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/event.js"></script>
+</body>
+</html>

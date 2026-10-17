@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Organizer - Event Ticketing</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">Event Ticketing</a>
+      <span class="tagline">Create events, add tiers, publish</span>
+      <nav id="account-nav" class="account-nav" aria-label="Account"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="breadcrumb"><a href="/">All events</a></p>
+
+    <section class="card" aria-labelledby="create-title">
+      <h1 id="create-title">Create an event</h1>
+      <p class="meta">A new event starts as a draft. Add at least one ticket tier, then publish it.</p>
+      <p id="create-status" class="status" aria-live="polite"></p>
+
+      <form id="create-form" novalidate>
+        <div class="field">
+          <label for="event-title">Title</label>
+          <input id="event-title" name="title" type="text" required>
+        </div>
+        <div class="field">
+          <label for="event-city">City</label>
+          <input id="event-city" name="city" type="text" required>
+        </div>
+        <div class="field">
+          <label for="event-venue">Venue</label>
+          <input id="event-venue" name="venue" type="text">
+        </div>
+        <div class="field">
+          <label for="event-date">Starts at</label>
+          <input id="event-date" name="startsAt" type="datetime-local" required>
+        </div>
+        <div class="field field-submit">
+          <button type="submit">Create draft</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>My events</h2>
+      <p id="events-status" class="status" aria-live="polite">Loading...</p>
+    </section>
+
+    <section id="events" class="results" aria-label="My events"></section>
+  </main>
+
+  <footer class="wrap footer">
+    <p class="meta">Build 7: the server checks that you are an organizer and that the event is yours.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/organizer.js"></script>
+</body>
+</html>

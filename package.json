@@ -8,7 +8,12 @@
     "node": ">=22.13"
   },
   "scripts": {
+    "start": "node src/server.js",
+    "seed": "node scripts/seed.js",
     "demo": "node scripts/demo.js",
-    "benchmark": "node scripts/benchmark-lookup.js"
+    "demo:search": "node scripts/demo-search.js",
+    "oversell": "node scripts/oversell-demo.js",
+    "benchmark": "node scripts/benchmark-lookup.js",
+    "test": "node --test"
   }
 }

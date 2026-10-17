@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in or sign up - Event Ticketing</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">Event Ticketing</a>
+      <span class="tagline">Sign in to book and manage your tickets</span>
+      <nav id="account-nav" class="account-nav" aria-label="Account"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="breadcrumb"><a href="/">All events</a></p>
+
+    <div class="two-up">
+      <section class="card" aria-labelledby="login-title">
+        <h1 id="login-title">Log in</h1>
+        <p id="login-status" class="status" aria-live="polite"></p>
+
+        <form id="login-form" novalidate>
+          <div class="field">
+            <label for="login-email">Email</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+          <div class="field field-submit">
+            <button type="submit">Log in</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card" aria-labelledby="signup-title">
+        <h1 id="signup-title">Sign up</h1>
+        <p class="meta">A password must be at least 8 characters. New accounts are attendees.</p>
+        <p id="signup-status" class="status" aria-live="polite"></p>
+
+        <form id="signup-form" novalidate>
+          <div class="field">
+            <label for="signup-email">Email</label>
+            <input id="signup-email" name="email" type="email" autocomplete="email" required>
+          </div>
+          <div class="field">
+            <label for="signup-password">Password</label>
+            <input id="signup-password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+          </div>
+          <div class="field">
+            <label for="signup-role">I am an</label>
+            <select id="signup-role" name="role">
+              <option value="attendee">Attendee - I want to book tickets</option>
+              <option value="organizer">Organizer - I want to publish events</option>
+              <option value="staff">Staff - I check people in at the door</option>
+            </select>
+          </div>
+          <div class="field field-submit">
+            <button type="submit">Create account</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer class="wrap footer">
+    <p class="meta">Build 7: the website now talks to the real API with a signed token.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/login.js"></script>
+</body>
+</html>

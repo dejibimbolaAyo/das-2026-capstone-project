@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My tickets - Event Ticketing</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">Event Ticketing</a>
+      <span class="tagline">Your bookings, private to you</span>
+      <nav id="account-nav" class="account-nav" aria-label="Account"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <p class="breadcrumb"><a href="/">All events</a></p>
+
+    <section class="card">
+      <h1>My tickets</h1>
+      <p class="meta">Only bookings made with your account are shown. Nobody else can read them.</p>
+      <p id="tickets-status" class="status" aria-live="polite">Loading...</p>
+    </section>
+
+    <section id="bookings" class="results" aria-label="My bookings"></section>
+  </main>
+
+  <footer class="wrap footer">
+    <p class="meta">Build 7: bookings are fetched with your bearer token, so they are yours alone.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/tickets.js"></script>
+</body>
+</html>

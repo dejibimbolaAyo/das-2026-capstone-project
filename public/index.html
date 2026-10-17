@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Event Ticketing - find your next event</title>
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="/">Event Ticketing</a>
+      <span class="tagline">Browse, filter and book tickets</span>
+      <nav id="account-nav" class="account-nav" aria-label="Account"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="card" aria-labelledby="find-heading">
+      <h1 id="find-heading">Find an event</h1>
+
+      <form id="filters" class="filters">
+        <div class="field">
+          <label for="q">Search</label>
+          <input id="q" name="q" type="search" placeholder="Title or venue">
+        </div>
+
+        <div class="field">
+          <label for="city">City</label>
+          <select id="city" name="city">
+            <option value="">All cities</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="maxPrice">Max price (₦)</label>
+          <input id="maxPrice" name="maxPrice" type="number" min="0" step="1" inputmode="numeric" placeholder="Any">
+        </div>
+
+        <div class="field">
+          <label for="sortBy">Sort by</label>
+          <select id="sortBy" name="sortBy">
+            <option value="date">Date (soonest)</option>
+            <option value="price">Price (cheapest)</option>
+            <option value="availability">Availability</option>
+          </select>
+        </div>
+
+        <div class="field field-check">
+          <input id="onlyAvailable" name="onlyAvailable" type="checkbox">
+          <label for="onlyAvailable">Only events with seats</label>
+        </div>
+
+        <div class="field field-submit">
+          <button type="submit">Search</button>
+        </div>
+      </form>
+    </section>
+
+    <p id="results-status" class="status" aria-live="polite"></p>
+
+    <section id="results" class="results" aria-label="Events"></section>
+  </main>
+
+  <footer class="wrap footer">
+    <p class="meta">Build 7: the screens now talk to the real API with a signed token.</p>
+  </footer>
+
+  <script type="module" src="/js/pages/home.js"></script>
+</body>
+</html>

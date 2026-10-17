@@ -36,7 +36,15 @@
 
 ### S04: As an organizer, I want to publish and unpublish an event, so that I control when it goes public
 
-*Written by you, in pairs, during the Build 2 class. Add your three criteria here before you paste the AI prompt below.*
+- **Given** a draft event with at least one ticket tier
+  **When** the organizer publishes it
+  **Then** the event becomes published and appears in the public list.
+- **Given** a published event
+  **When** the organizer unpublishes it
+  **Then** the event becomes a draft and is hidden from the public list.
+- **Given** a draft event with no ticket tiers
+  **When** the organizer tries to publish it
+  **Then** the request is rejected with INVALID_STATE and the event stays a draft.
 
 ### S05: As an attendee, I want to search, filter and sort published events, so that I can find one I like
 
@@ -126,7 +134,7 @@ Add the following. Do not change what already works.
    Include: the original list is unchanged after sorting and filtering, the
    sort is stable, an empty list, and every error code.
 
-5. Add an "npm test" script to package.json.
+5. Add an "test": "node --test" script to package.json.
 
 Rules: money is whole cents; dates are ISO strings; errors are DomainError with
 a code; no mutation of inputs. When you are done, list every file you changed

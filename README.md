@@ -128,6 +128,35 @@ Read in this order:
 
 Follow the "Done when" list in [docs/build-1.md](docs/build-1.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
 
+## Build 7: run the API and the website
+
+From Build 4 on there is a real HTTP API, and from Build 6 there is a website that
+uses it (from Build 7 with a signed token, not mock data).
+
+```bash
+npm start                              # http://localhost:3000
+TOKEN_SECRET=dev-secret npm start      # keep tokens valid across restarts
+DB_PATH=./data/ticketing.db npm start  # choose the SQLite file
+```
+
+PowerShell sets an environment variable for one command like this:
+`$env:TOKEN_SECRET='dev-secret'; npm start`.
+
+Open http://localhost:3000 in a browser and walk the Build 7 story:
+
+1. **Log in / sign up** (`/login.html`). Sign up as an **organizer**.
+2. On the organizer page, create a draft event, add a ticket tier, and
+   **publish** it.
+2. Log out, sign up as an **attendee**, open the event and book and pay.
+3. Look at **My tickets**: you see only your own bookings. Sign in as someone
+   else and you cannot read them.
+- `npm test` runs the whole suite, which includes the login, bad-token,
+  expired-token and wrong-role tests.
+
+The full list of calls, with `curl` examples for each, is in
+[docs/api-examples.md](docs/api-examples.md). `x-user-id` from Build 4 is gone:
+every private call now carries `Authorization: Bearer <token>`.
+
 ## Documents
 
 - [docs/milestones.md](docs/milestones.md): the nine Builds at a glance, with a glossary.

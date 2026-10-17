@@ -1,0 +1,311 @@
+/* Build 6: the stylesheet for the browser pages.
+   Kept simple on purpose: no framework, no build step, system fonts. */
+
+:root {
+  --ink: #1b1b1f;
+  --muted: #64646e;
+  --line: #e2e2e8;
+  --accent: #2f6f4f;
+  --accent-ink: #ffffff;
+  --danger: #a5342b;
+  --danger-bg: #fdecea;
+  --success: #1f6f43;
+  --success-bg: #e9f6ee;
+  --soldout: #8a8a94;
+  --bg: #f7f7f9;
+  --card: #ffffff;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.wrap {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* --- header / footer --- */
+
+.site-header {
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+}
+
+.header-inner {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.brand {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tagline { color: var(--muted); }
+
+/* The account links in the header, filled in by js/nav.js. */
+.account-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  flex-wrap: wrap;
+}
+
+.nav-user { color: var(--muted); font-size: .9rem; }
+
+/* A button that should look like a link (e.g. "Log out"). */
+.link-button {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.link-button:hover { filter: none; text-decoration: none; }
+
+main { padding-top: 2rem; padding-bottom: 2rem; }
+
+.footer {
+  padding-top: 1rem;
+  padding-bottom: 2.5rem;
+}
+
+.breadcrumb { margin: 0 0 1rem; }
+
+.section-heading { font-size: 1.15rem; margin: 2rem 0 .75rem; }
+
+/* --- cards --- */
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.25rem 1.4rem;
+  margin-top: 1.5rem;
+}
+
+h1 { font-size: 1.9rem; margin: 0 0 .25rem; }
+h2 { font-size: 1.1rem; margin: 0 0 .5rem; }
+h3 { font-size: 1.05rem; margin: 0; }
+
+.meta { color: var(--muted); margin: .25rem 0; }
+
+.row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+
+/* --- forms --- */
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+  margin-top: .75rem;
+}
+
+.field { display: flex; flex-direction: column; gap: .3rem; }
+
+.field label { font-weight: 600; font-size: .9rem; }
+
+input[type="search"],
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="datetime-local"],
+select {
+  font: inherit;
+  padding: .5rem .6rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+/* Plain forms inside a card (login, signup, create event) stack their fields. */
+.card form:not(.filters) .field + .field { margin-top: .85rem; }
+.card form:not(.filters) .field-submit { margin-top: 1.1rem; }
+
+/* Login and signup sit side by side until the screen is narrow. */
+.two-up {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.field-check { flex-direction: row; align-items: center; gap: .5rem; }
+.field-check label { font-weight: 400; }
+
+.field-submit { justify-content: end; }
+
+:focus-visible {
+  outline: 3px solid #7fb69b;
+  outline-offset: 2px;
+}
+
+/* --- buttons and link-buttons --- */
+
+button,
+.button-link {
+  font: inherit;
+  padding: .5rem 1rem;
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+button:hover,
+.button-link:hover { filter: brightness(1.08); }
+
+button:disabled {
+  background: var(--soldout);
+  cursor: not-allowed;
+  filter: none;
+}
+
+a { color: var(--accent); }
+
+/* --- results --- */
+
+.status { margin: 1.5rem 0 0; color: var(--muted); }
+
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+  gap: 1rem;
+}
+
+.event-card { margin-top: 0; display: flex; flex-direction: column; gap: .35rem; }
+.event-card .button-link { margin-top: auto; align-self: start; }
+
+.price { font-weight: 700; }
+
+.badge {
+  font-size: .8rem;
+  padding: .15rem .55rem;
+  border-radius: 999px;
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid #cbe6d6;
+}
+
+.badge-soldout {
+  background: #f0f0f2;
+  color: var(--soldout);
+  border-color: var(--line);
+}
+
+/* --- event page tiers --- */
+
+.tiers { display: grid; gap: 1rem; }
+
+.tier { margin-top: 0; }
+
+.tier-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+}
+
+.tier-actions {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin-top: .75rem;
+  flex-wrap: wrap;
+}
+
+.tier-actions input[type="number"] { width: 5.5rem; }
+
+.tier-soldout { opacity: .75; }
+
+/* --- checkout --- */
+
+.checkout { border-color: #cbe6d6; }
+
+.hold { margin: .35rem 0; }
+
+#countdown {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.1rem;
+  color: var(--accent);
+}
+
+/* --- messages --- */
+
+.message {
+  margin: .6rem 0 0;
+  padding: .55rem .75rem;
+  border-radius: 8px;
+  font-size: .95rem;
+}
+
+.message-error { background: var(--danger-bg); color: var(--danger); }
+.message-success { background: var(--success-bg); color: var(--success); }
+.message-info { background: var(--bg); color: var(--muted); }
+
+code {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0 .3rem;
+}
+
+/* --- Build 7 additions --- */
+
+.button-secondary {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid var(--line);
+}
+
+.badge-draft {
+  background: #fff8e6;
+  color: #8a6d1d;
+  border-color: #f1e3bd;
+}
+
+/* The organizer's list of ticket tiers. */
+.tier-list { list-style: none; margin: .6rem 0 0; padding: 0; }
+
+.tier-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .75rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tier-line:last-child { border-bottom: 0; }
+.tier-name { font-weight: 600; min-width: 7rem; }
+
+.tier-add { align-items: end; }
+.tier-add .field { flex: 1 1 8rem; }
+
+/* Status lines on the login, tickets and organizer pages. */
+.status-error { color: var(--danger); }
+.status-success { color: var(--success); }
+.status-info { color: var(--muted); }
+
+.status .badge { margin-left: .5rem; }

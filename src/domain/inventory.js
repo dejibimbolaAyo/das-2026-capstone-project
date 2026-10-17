@@ -1,12 +1,21 @@
 // Build 1: the domain core, running entirely in memory.
 // No server, no database. Just objects, Maps and rules.
-// Build 4 replaces this file with services + repositories.
+//
+// Build 4 splits the API side of this into src/services/ + src/repositories/.
+// This file stays as the pure rules and keeps the terminal demos working; the
+// services reuse the same validators, the state machine and the search rules.
 
 import { newId, referenceCode } from './ids.js';
 import { Queue } from './waitlistQueue.js';
 import { DomainError } from './errors.js';
+import {
+  requireText,
+  requireWholeNumber,
+  requireValidDate,
+  requireQuantity,
+} from './validation.js';
 
-export const MAX_TICKETS_PER_BOOKING = 10;
+export { MAX_TICKETS_PER_BOOKING } from './validation.js';
 
 // Bookings in these states are holding seats. A cancelled one is not.
 const HOLDS_SEATS = new Set(['pending', 'paid']);
@@ -21,20 +30,6 @@ export function createStore() {
   };
 }
 
-function requireText(value, field) {
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new DomainError('VALIDATION', `${field} is required`);
-  }
-  return value.trim();
-}
-
-function requireWholeNumber(value, field, min) {
-  if (!Number.isInteger(value) || value < min) {
-    throw new DomainError('VALIDATION', `${field} must be a whole number of at least ${min}`);
-  }
-  return value;
-}
-
 function getTier(store, tierId) {
   const tier = store.tiers.get(tierId);
   if (!tier) throw new DomainError('NOT_FOUND', 'Ticket tier not found');
@@ -42,10 +37,7 @@ function getTier(store, tierId) {
 }
 
 export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
-  const date = new Date(startsAt);
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainError('VALIDATION', 'startsAt must be a valid date');
-  }
+  const date = requireValidDate(startsAt, 'startsAt');
   const event = {
     id: newId(),
     organizerId,
@@ -85,9 +77,7 @@ export function seatsLeft(tier) {
 
 export function bookTickets(store, tierId, userId, quantity) {
   const tier = getTier(store, tierId);
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_TICKETS_PER_BOOKING) {
-    throw new DomainError('VALIDATION', `quantity must be between 1 and ${MAX_TICKETS_PER_BOOKING}`);
-  }
+  requireQuantity(quantity);
 
   const left = seatsLeft(tier);
   if (left < quantity) {
@@ -134,9 +124,7 @@ export function cancelBooking(store, reference) {
 
 export function joinWaitlist(store, tierId, userId, quantity) {
   const tier = getTier(store, tierId);
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_TICKETS_PER_BOOKING) {
-    throw new DomainError('VALIDATION', `quantity must be between 1 and ${MAX_TICKETS_PER_BOOKING}`);
-  }
+  requireQuantity(quantity);
   if (seatsLeft(tier) >= quantity) {
     throw new DomainError('NOT_SOLD_OUT', 'Seats are available, so book them instead');
   }
@@ -153,4 +141,54 @@ export function offerNextOnWaitlist(store, tierId) {
   const head = queue.peek();
   if (!head || seatsLeft(tier) < head.quantity) return undefined;
   return queue.dequeue();
+}
+
+export function publishEvent(store, eventId) {
+  const event = store.events.get(eventId);
+  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  if (event.status === 'published') return event;
+  if (!Array.isArray(event.tierIds) || event.tierIds.length === 0) {
+    throw new DomainError('INVALID_STATE', 'Cannot publish an event with no ticket tiers');
+  }
+  event.status = 'published';
+  return event;
+}
+
+export function unpublishEvent(store, eventId) {
+  const event = store.events.get(eventId);
+  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  event.status = 'draft';
+  return event;
+}
+
+// A public summary of an event, built from its tiers. Pure, so both the store
+// version below and the Build 4 services can use it.
+export function summariseEvent(event, tiers) {
+  let minPriceCents = null;
+  let totalSeatsLeft = 0;
+  for (const tier of tiers) {
+    if (minPriceCents === null || tier.priceCents < minPriceCents) minPriceCents = tier.priceCents;
+    totalSeatsLeft += Math.max(0, tier.capacity - tier.sold);
+  }
+  return {
+    id: event.id,
+    title: event.title,
+    city: event.city,
+    venue: event.venue,
+    startsAt: event.startsAt,
+    status: event.status,
+    minPriceCents,
+    totalSeatsLeft,
+    tierCount: tiers.length,
+  };
+}
+
+export function listEventSummaries(store, { publishedOnly = true } = {}) {
+  const results = [];
+  for (const event of store.events.values()) {
+    if (publishedOnly && event.status !== 'published') continue;
+    const tiers = (event.tierIds || []).map((id) => store.tiers.get(id)).filter(Boolean);
+    results.push(summariseEvent(event, tiers));
+  }
+  return results;
 }
