@@ -49,9 +49,19 @@ function getEvent(store, eventId) {
 }
 
 export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
+  const isDateOnly = typeof startsAt === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(startsAt);
+  const isDateTime = typeof startsAt === 'string' &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d{1,3})?)?(?:Z|[+-]\d{2}:\d{2})$/.test(startsAt);
   const date = new Date(startsAt);
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainError('VALIDATION', 'startsAt must be a valid date');
+  const calendarPart = typeof startsAt === 'string' ? startsAt.slice(0, 10) : '';
+  const calendarTime = Date.parse(calendarPart);
+  const validCalendarPart = Number.isFinite(calendarTime) &&
+    new Date(calendarTime).toISOString().slice(0, 10) === calendarPart;
+  const validCalendarDate = validCalendarPart && (isDateOnly
+    ? !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === startsAt
+    : isDateTime && !Number.isNaN(date.getTime()));
+  if (!validCalendarDate) {
+    throw new DomainError('VALIDATION', 'startsAt must be a real ISO date or date-time');
   }
   const event = {
     id: newId(),
@@ -175,4 +185,60 @@ export function offerNextOnWaitlist(store, tierId) {
   const head = queue.peek();
   if (!head || seatsLeft(tier) < head.quantity) return undefined;
   return queue.dequeue();
+}
+
+/**
+ * Publish an event once it has at least one ticket tier.
+ * The existing event object is updated and returned.
+ */
+export function publishEvent(store, eventId) {
+  const event = store.events.get(eventId);
+  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  if (!event.tierIds.length) {
+    throw new DomainError('INVALID_STATE', 'An event needs at least one ticket tier before publishing');
+  }
+  event.status = 'published';
+  return event;
+}
+
+/**
+ * Return detached public-facing summaries. Draft events are excluded by default.
+ */
+export function listEventSummaries(store, { publishedOnly = true } = {}) {
+  const summaries = [];
+  for (const event of store.events.values()) {
+    if (publishedOnly && event.status !== 'published') continue;
+    const tiers = event.tierIds
+      .map(tierId => store.tiers.get(tierId))
+      .filter(Boolean)
+      .map(tier => ({
+        id: tier.id,
+        name: tier.name,
+        priceCents: tier.priceCents,
+        capacity: tier.capacity,
+        sold: tier.sold,
+        seatsLeft: seatsLeft(tier),
+      }));
+    summaries.push({
+      id: event.id,
+      title: event.title,
+      city: event.city,
+      venue: event.venue,
+      startsAt: event.startsAt,
+      status: event.status,
+      tiers,
+    });
+  }
+  return summaries;
+}
+
+/** Return an event to draft status without deleting its tiers or bookings. */
+export function unpublishEvent(store, eventId) {
+  const event = store.events.get(eventId);
+  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  if (event.status !== 'published') {
+    throw new DomainError('INVALID_STATE', 'Only a published event can be unpublished');
+  }
+  event.status = 'draft';
+  return event;
 }
