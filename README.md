@@ -126,12 +126,13 @@ Read in this order:
 
 ### Your Build 1 task
 
-Follow the "Done when" list for Build 1 in [docs/milestones.md](docs/milestones.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
+Follow the "Done when" list in [docs/build-1.md](docs/build-1.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
 
 ## Documents
 
-- [docs/milestones.md](docs/milestones.md): the nine builds, what each delivers, and when it is done.
-- [docs/user-stories.md](docs/user-stories.md): the product backlog with acceptance criteria and the definition of done.
+- [docs/milestones.md](docs/milestones.md): the nine Builds at a glance, with a glossary.
+- [docs/build-1.md](docs/build-1.md) to [docs/build-9.md](docs/build-9.md): one file per Build, with its deliverables and its user stories with acceptance criteria.
+- [docs/user-stories.md](docs/user-stories.md): the product backlog and the definition of done.
 
 ## Rules of the road
 

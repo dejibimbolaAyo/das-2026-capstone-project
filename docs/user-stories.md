@@ -33,51 +33,28 @@ Each Build is one sprint. The "Build" column says which build finishes the story
 
 **Stretch:** organizer sales dashboard, per-seat tickets, promo codes, waitlist notifications, partial refunds, organizer cancels the whole event.
 
-## Acceptance criteria for the stories that matter most
+## Where the acceptance criteria are
 
-### S06: Book tickets
+Each story's Given/When/Then criteria are in the file of the Build that first delivers it.
 
-- **Given** a published event with 3 seats left in General
-  **When** an attendee books 2
-  **Then** a pending booking is created for 2 seats, priced in whole cents, and 1 seat is left.
-- **Given** 1 seat left
-  **When** an attendee books 2
-  **Then** the booking is rejected with `SOLD_OUT` and nothing changes.
-- **Given** any tier
-  **When** the quantity is 0, negative, fractional or more than 10
-  **Then** the request is rejected with `VALIDATION`.
-
-### S08: Last ticket (finished in Build 5)
-
-- **Given** exactly 1 seat left
-  **When** 50 attendees try to book it at the same moment
-  **Then** exactly 1 booking succeeds, 49 get `SOLD_OUT`, and seats sold never exceeds capacity.
-
-### S09: Cancel and refund
-
-- **Given** a paid booking and an event 10 days away
-  **When** the attendee cancels
-  **Then** 100% is refunded and the seats are released once.
-- **Given** an event 3 days away **Then** 50% is refunded.
-- **Given** an event 1 day away **Then** nothing is refunded, but the seats are still released.
-- **Given** a booking that is already cancelled or refunded
-  **When** the attendee cancels again
-  **Then** the request is rejected and the seats are not released a second time.
-
-### S12: Waitlist offers
-
-- **Given** three people on the waitlist in order A, B, C
-  **When** a seat is freed
-  **Then** A (not B or C) is offered it, and the seat is held for A.
-- **Given** A does not accept in time
-  **When** the offer expires
-  **Then** the seat passes to B.
-
-### S15: Check-in
-
-- **Given** a QR code that was edited or made up **Then** it is rejected as invalid.
-- **Given** a valid code that has already been scanned **Then** it is rejected as a duplicate and shows when it was first used.
-- **Given** a booking that was refunded or cancelled **Then** its code is rejected.
+| Story | Criteria in |
+|---|---|
+| S01 | [Build 7](build-7.md) |
+| S02 | [Build 2](build-2.md) |
+| S03 | [Build 2](build-2.md) |
+| S04 | [Build 2](build-2.md) |
+| S05 | [Build 2](build-2.md) |
+| S06 | [Build 2](build-2.md) |
+| S07 | [Build 4](build-4.md) |
+| S08 | [Build 5](build-5.md) |
+| S09 | [Build 8](build-8.md) |
+| S10 | [Build 8](build-8.md) |
+| S11 | [Build 8](build-8.md) |
+| S12 | [Build 8](build-8.md) |
+| S13 | [Build 7](build-7.md) |
+| S14 | [Build 9](build-9.md) |
+| S15 | [Build 9](build-9.md) |
+| S16 | [Build 2](build-2.md) |
 
 ## Definition of done (every story)
 
