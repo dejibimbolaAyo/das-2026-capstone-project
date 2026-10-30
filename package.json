@@ -1,12 +1,9 @@
+
 {
-  "name": "ticketing-capstone",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Event Ticketing and Booking - course capstone, built one milestone per Build session",
+  "name": "event-ticketing-capstone",
+  "version": "1.0.0",
+  "description": "Event ticketing and booking system",
   "type": "module",
-  "engines": {
-    "node": ">=22.13"
-  },
   "scripts": {
     "start": "node src/server.js",
     "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec",

@@ -1,19 +1,25 @@
-import { randomBytes, randomUUID } from 'node:crypto';
 
-// No 0/O or 1/I, so a code read out loud at the door is hard to get wrong.
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 characters
+import { randomUUID, randomBytes } from "node:crypto";
 
 export function newId() {
   return randomUUID();
 }
 
-// 32 characters divides 256 evenly, so `byte % 32` has no bias.
-// Math.random() would work too, but it is not meant for codes people rely on.
-export function referenceCode(length = 8) {
-  const bytes = randomBytes(length);
-  let code = '';
-  for (const byte of bytes) {
-    code += ALPHABET[byte % ALPHABET.length];
+export function newReference() {
+  const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = randomBytes(8);
+
+  const reference = Array.from(bytes, (byte) => {
+    return ALPHABET[byte % ALPHABET.length];
+  });
+
+  if (!reference.some((character) => /[2-9]/.test(character))) {
+    reference[7] = ALPHABET[bytes[0] % 8 + 24];
   }
-  return code;
+
+  if (!reference.some((character) => /[A-Z]/.test(character))) {
+    reference[0] = ALPHABET[bytes[1] % 24];
+  }
+
+  return reference.join("");
 }

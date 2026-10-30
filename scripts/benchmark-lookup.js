@@ -1,32 +1,65 @@
-// Run with: npm run benchmark
-// Why do we keep bookings in a Map keyed by reference code?
-// Finding one booking in an array is O(n). In a Map it is O(1).
 
-import { referenceCode } from '../src/domain/ids.js';
+import { performance } from "node:perf_hooks";
 
-const BOOKINGS = 100_000;
-const LOOKUPS = 500;
+const TOTAL_BOOKINGS = 100_000;
+const TOTAL_LOOKUPS = 500;
 
-const list = [];
-const map = new Map();
-for (let i = 0; i < BOOKINGS; i += 1) {
-  const booking = { reference: referenceCode(), number: i };
-  list.push(booking);
-  map.set(booking.reference, booking);
+// Create 100,000 sample bookings.
+const bookings = [];
+
+for (let i = 0; i < TOTAL_BOOKINGS; i++) {
+  bookings.push({
+    id: i,
+    reference: `REF${String(i).padStart(6, "0")}`,
+    name: `Customer ${i}`,
+  });
 }
 
-const targets = Array.from({ length: LOOKUPS }, () => list[Math.floor(Math.random() * BOOKINGS)].reference);
+// Store the same bookings in a Map for direct lookup.
+const bookingsByReference = new Map();
 
-function time(label, lookup) {
-  const start = performance.now();
-  for (const reference of targets) lookup(reference);
-  const ms = performance.now() - start;
-  console.log(`${label.padEnd(12)} ${ms.toFixed(2).padStart(10)} ms for ${LOOKUPS} lookups`);
-  return ms;
+for (const booking of bookings) {
+  bookingsByReference.set(booking.reference, booking);
 }
 
-console.log(`${BOOKINGS.toLocaleString()} bookings in memory\n`);
-const listMs = time('Array.find', (ref) => list.find((b) => b.reference === ref));
-const mapMs = time('Map.get', (ref) => map.get(ref));
-console.log(`\nThe Map was about ${Math.round(listMs / Math.max(mapMs, 0.001)).toLocaleString()}x faster.`);
-console.log('Now double BOOKINGS and run it again. Which number grows, and which one stays flat?');
+// Prepare 500 references to look up.
+const references = [];
+
+for (let i = 0; i < TOTAL_LOOKUPS; i++) {
+  const index = TOTAL_BOOKINGS - 1 - i;
+  references.push(`REF${String(index).padStart(6, "0")}`);
+}
+
+// Benchmark Array.find().
+const arrayStart = performance.now();
+
+for (const reference of references) {
+  bookings.find((booking) => booking.reference === reference);
+}
+
+const arrayEnd = performance.now();
+
+// Benchmark Map.get().
+const mapStart = performance.now();
+
+for (const reference of references) {
+  bookingsByReference.get(reference);
+}
+
+const mapEnd = performance.now();
+
+console.log("=== BOOKING LOOKUP BENCHMARK ===");
+console.log("Total bookings:", TOTAL_BOOKINGS);
+console.log("Total lookups:", TOTAL_LOOKUPS);
+console.log(
+  "Array.find() time:",
+  (arrayEnd - arrayStart).toFixed(3),
+  "ms"
+);
+console.log(
+  "Map.get() time:",
+  (mapEnd - mapStart).toFixed(3),
+  "ms"
+);
+console.log("\nArray.find(): O(n) average-time search");
+console.log("Map.get(): O(1) average-time lookup");

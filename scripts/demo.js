@@ -1,57 +1,98 @@
-// Run with: npm run demo
-// A guided tour of the Build 1 domain logic in the terminal.
 
 import {
   createStore,
   createEvent,
   addTier,
   bookTickets,
+  findBookingByReference,
   cancelBooking,
   joinWaitlist,
-  offerNextOnWaitlist,
-  findBookingByReference,
-  seatsLeft,
-} from '../src/domain/inventory.js';
-import { DomainError } from '../src/domain/errors.js';
+} from "../src/domain/inventory.js";
 
-const store = createStore();
+function runDemo() {
+  const store = createStore();
 
-const event = createEvent(store, {
-  title: 'Lagos Tech Meetup',
-  city: 'Lagos',
-  venue: 'Yaba Hub',
-  startsAt: '2026-12-05T17:00:00Z',
-  organizerId: 'organizer-1',
-});
-const tier = addTier(store, event.id, { name: 'General', priceCents: 500_000, capacity: 3 });
-console.log(`Created "${event.title}" with ${tier.capacity} seats in ${tier.name}.\n`);
+  console.log("=== EVENT TICKETING DEMO ===\n");
 
-function attempt(label, action) {
+  // 1. Create an event.
+  const event = createEvent(store, {
+    name: "Lagos Fiesta Carnival 2026",
+    date: "2026-12-15",
+  });
+
+  // 2. Create a ticket tier.
+  const tier = addTier(store, event.id, {
+    name: "Regular",
+    capacity: 3,
+    priceCents: 500000,
+  });
+
+  console.log("Event created:", event.name);
+  console.log("Ticket capacity:", tier.capacity);
+
+  // 3. Ada books two tickets.
+  const ada = bookTickets(store, event.id, tier.id, {
+    name: "Ada",
+    quantity: 2,
+  });
+
+  console.log("\nAda booked:", ada.quantity, "tickets");
+  console.log("Ada's reference:", ada.reference);
+  console.log("Tickets remaining:", tier.available);
+
+  // 4. Bayo tries to book two tickets.
   try {
-    const result = action();
-    console.log(`OK    ${label}`);
-    return result;
+    bookTickets(store, event.id, tier.id, {
+      name: "Bayo",
+      quantity: 2,
+    });
   } catch (error) {
-    if (!(error instanceof DomainError)) throw error;
-    console.log(`FAIL  ${label} -> ${error.code}: ${error.message}`);
-    return undefined;
+    console.log("\nBayo's booking rejected:", error.code);
+    console.log("Reason:", error.message);
   }
+
+  // 5. Chika books the final ticket.
+  const chika = bookTickets(store, event.id, tier.id, {
+    name: "Chika",
+    quantity: 1,
+  });
+
+  console.log("\nChika booked:", chika.quantity, "ticket");
+  console.log("Tickets remaining:", tier.available);
+
+  // 6. Bayo and Dami join the waitlist.
+  joinWaitlist(store, event.id, tier.id, {
+    name: "Bayo",
+    quantity: 2,
+  });
+
+  joinWaitlist(store, event.id, tier.id, {
+    name: "Dami",
+    quantity: 1,
+  });
+
+  console.log("\nPeople on waitlist:", tier.waitlist.size);
+
+  // 7. Find Ada's booking using her reference.
+  const found = findBookingByReference(store, ada.reference);
+
+  console.log("\nBooking lookup:");
+  console.log("Customer:", found.name);
+  console.log("Reference:", found.reference);
+
+  // 8. Ada cancels her booking.
+  const result = cancelBooking(store, ada.reference);
+
+  console.log("\nAda cancelled:", result.booking.status);
+  console.log("Tickets available:", tier.available);
+
+  if (result.nextPerson) {
+    console.log("Next person in line:", result.nextPerson.name);
+  } else {
+    console.log("No waitlisted customer was offered tickets.");
+  }
+
+  console.log("\n=== DEMO COMPLETE ===");
 }
 
-const ada = attempt('Ada books 2 tickets', () => bookTickets(store, tier.id, 'ada', 2));
-attempt('Bayo books 2 tickets (only 1 left)', () => bookTickets(store, tier.id, 'bayo', 2));
-attempt('Bayo books 1 ticket', () => bookTickets(store, tier.id, 'bayo', 1));
-console.log(`\nSeats left: ${seatsLeft(tier)}\n`);
-
-attempt('Chidi joins the waitlist for 2 seats', () => joinWaitlist(store, tier.id, 'chidi', 2));
-attempt('Dayo joins the waitlist for 1 seat', () => joinWaitlist(store, tier.id, 'dayo', 1));
-
-console.log(`\nLooking Ada's booking up by reference ${ada.reference}:`);
-console.log(findBookingByReference(store, ada.reference));
-
-console.log();
-attempt('Ada cancels', () => cancelBooking(store, ada.reference));
-console.log(`Seats left: ${seatsLeft(tier)}`);
-
-const offer = offerNextOnWaitlist(store, tier.id);
-console.log('Next on the waitlist:', offer);
+runDemo();
