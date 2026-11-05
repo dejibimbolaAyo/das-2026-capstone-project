@@ -1,0 +1,52 @@
+{
+  "v": 1,
+  "id": "build-4-local",
+  "name": "Event Ticketing (local)",
+  "variables": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "secret": false
+    },
+    {
+      "key": "organizerId",
+      "value": "org-1",
+      "secret": false
+    },
+    {
+      "key": "attendeeId",
+      "value": "ada",
+      "secret": false
+    },
+    {
+      "key": "otherAttendeeId",
+      "value": "bayo",
+      "secret": false
+    },
+    {
+      "key": "eventId",
+      "value": "",
+      "secret": false
+    },
+    {
+      "key": "tierId",
+      "value": "",
+      "secret": false
+    },
+    {
+      "key": "smallTierId",
+      "value": "",
+      "secret": false
+    },
+    {
+      "key": "reference",
+      "value": "",
+      "secret": false
+    },
+    {
+      "key": "cancelReference",
+      "value": "",
+      "secret": false
+    }
+  ]
+}
