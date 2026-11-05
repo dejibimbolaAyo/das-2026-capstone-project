@@ -21,6 +21,21 @@ const CONTENT_TYPES = {
   '.webp': 'image/webp',
 };
 
+// The one place where an error code becomes an HTTP status.
+// Any DomainError code not listed here is a 400.
+const STATUS_BY_CODE = {
+  VALIDATION: 400,
+  INVALID_JSON: 400,
+  INVALID_PATH: 400,
+  UNAUTHENTICATED: 401,
+  PAYMENT_DECLINED: 402,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  SOLD_OUT: 409,
+  INVALID_STATE: 409,
+  INVALID_TRANSITION: 409,
+};
+
 function sendJson(response, status, body) {
   response.writeHead(status, { 'content-type': 'application/json; charset=utf-8' });
   response.end(JSON.stringify(body));
@@ -55,7 +70,9 @@ async function servePublicFile(response, pathname, publicDirectory, method) {
   }
 
   const root = resolve(publicDirectory);
-  const requestedPath = resolve(root, `.${decodedPath === '/' ? '/index.html' : decodedPath}`);
+  // "/" is index.html, and a path with no extension is an .html page: /docs -> docs.html.
+  const filePath = decodedPath === '/' ? '/index.html' : extname(decodedPath) ? decodedPath : `${decodedPath}.html`;
+  const requestedPath = resolve(root, `.${filePath}`);
   const relativePath = relative(root, requestedPath);
   if (isAbsolute(relativePath) || relativePath === '..' || relativePath.startsWith(`..${sep}`)) {
     sendError(response, 404, 'NOT_FOUND', 'File not found');
@@ -114,7 +131,8 @@ export function createAppServer({ router = new Router(), publicDirectory = DEFAU
       const body = await readJsonBody(request);
 
       if (route) {
-        const result = await route.handler({ request, params: route.params, body });
+        const query = Object.fromEntries(url.searchParams);
+        const result = await route.handler({ request, params: route.params, query, body });
         sendJson(response, result?.status ?? 200, result?.body ?? result ?? null);
       } else if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         sendError(response, 404, 'NOT_FOUND', 'API route not found');
@@ -129,7 +147,7 @@ export function createAppServer({ router = new Router(), publicDirectory = DEFAU
         return;
       }
       if (error instanceof DomainError) {
-        sendError(response, 400, error.code, error.message);
+        sendError(response, STATUS_BY_CODE[error.code] ?? 400, error.code, error.message);
         return;
       }
       sendError(response, 500, 'INTERNAL_ERROR', 'An unexpected error occurred');

@@ -53,6 +53,12 @@ describe('HTTP app', () => {
     assert.match(await response.text(), /Event Ticketing/);
   });
 
+  it('serves an extensionless path as its .html page', async () => {
+    const response = await fetch(`${baseUrl}/docs`);
+    assert.equal(response.status, 200);
+    assert.match(await response.text(), /createApiReference/);
+  });
+
   it('does not serve files outside public', async () => {
     const response = await fetch(`${baseUrl}/%2e%2e%2fREADME.md`);
     assert.equal(response.status, 404);
