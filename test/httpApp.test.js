@@ -1,7 +1,6 @@
-import { after, before, describe, it } from 'node:test';
+import { after, before, describe, it} from 'node:test';
 import assert from 'node:assert/strict';
 import { createAppServer } from '../src/http/app.js';
-
 describe('HTTP app', () => {
   const server = createAppServer();
   let baseUrl;
