@@ -42,7 +42,7 @@ test('invalid JSON request body returns a JSON 400', async () => {
       body: '{bad json',
     });
     assert.equal(response.status, 400);
-    assert.deepEqual(await response.json(), { error: { code: 'BAD_JSON', message: 'Request body must contain valid JSON' } });
+    assert.deepEqual(await response.json(), { error: { code: 'INVALID_JSON', message: 'Request body must contain valid JSON' } });
   });
 });
 

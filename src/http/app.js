@@ -5,6 +5,8 @@ import { extname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DomainError } from '../domain/errors.js';
 import { Router } from './router.js';
+import { createMemoryRepository } from '../repositories/memory.js';
+import { createApiRouter } from './apiRoutes.js';
 
 const DEFAULT_PUBLIC_DIRECTORY = fileURLToPath(new URL('../../public/', import.meta.url));
 const CONTENT_TYPES = {
@@ -101,8 +103,16 @@ async function servePublicFile(response, pathname, publicDirectory, method) {
     throw error;
   }
 }
+export function createApp({
+  router,
+  publicDir = DEFAULT_PUBLIC_DIRECTORY,
+  repository = createMemoryRepository(),
+  paymentGateway,
+} = {}) {
+  router ??= new Router();
 
-export function createAppServer({ router = new Router(), publicDirectory = DEFAULT_PUBLIC_DIRECTORY } = {}) {
+  createApiRouter({router, repository, paymentGateway });
+
   if (!router.match('GET', '/health')) {
     router.get('/health', () => ({ status: 200, body: { status: 'ok' } }));
   }
@@ -119,7 +129,7 @@ export function createAppServer({ router = new Router(), publicDirectory = DEFAU
       } else if (url.pathname === '/api' || url.pathname.startsWith('/api/')) {
         sendError(response, 404, 'NOT_FOUND', 'API route not found');
       } else if (request.method === 'GET' || request.method === 'HEAD') {
-        await servePublicFile(response, url.pathname, publicDirectory, request.method);
+        await servePublicFile(response, url.pathname, publicDir, request.method);
       } else {
         sendError(response, 404, 'NOT_FOUND', 'Route not found');
       }
@@ -128,11 +138,27 @@ export function createAppServer({ router = new Router(), publicDirectory = DEFAU
         response.destroy(error);
         return;
       }
+
       if (error instanceof DomainError) {
-        sendError(response, 400, error.code, error.message);
-        return;
-      }
+  const statusCodes = {
+    INVALID_JSON: 400,
+    INVALID_PATH: 400,
+    VALIDATION: 400,
+    UNAUTHORIZED: 401,
+    FORBIDDEN: 403,
+    NOT_FOUND: 404,
+    INVALID_TRANSITION: 409,
+    INVALID_STATE: 409,
+    PAYMENT_DECLINED: 402,
+  };
+
+  const status = statusCodes[error.code] ?? 400;
+
+  sendError(response, status, error.code, error.message);
+  return;
+}
       sendError(response, 500, 'INTERNAL_ERROR', 'An unexpected error occurred');
     }
   });
 }
+export const createAppServer = createApp;
