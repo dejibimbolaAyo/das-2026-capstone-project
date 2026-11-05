@@ -1,13 +1,15 @@
 // Booking rules for the API: book, pay (mock), cancel.
 //
-// Known gap, on purpose: between reading a tier and saving the new `sold`
-// count there is an `await`, so two requests at the same moment can both see
-// the last seat. Build 5 reproduces that and fixes it in the database.
+// Overselling (Build 5): in Build 4 we read the tier, checked for room, and then
+// saved `sold + quantity`. With an `await` between the read and the save, fifty
+// requests could all read "1 seat left" and all succeed. Now the repository
+// checks and takes the seats in one atomic step (`reserveSeats`), and the
+// number of rows it changed tells us whether we won the seat.
 
 import { assertTransition } from '../domain/bookingStateMachine.js';
 import { DomainError } from '../domain/errors.js';
 import { newId, referenceCode } from '../domain/ids.js';
-import { assertSeatsAvailable, requireQuantity, requireText } from '../domain/validation.js';
+import { requireQuantity, requireText, soldOutError } from '../domain/validation.js';
 import { requireActor } from './eventService.js';
 
 function toPublicBooking(booking) {
@@ -50,8 +52,12 @@ export function createBookingService({ repository, paymentGateway, now = () => n
         throw new DomainError('INVALID_STATE', 'This event is not open for booking');
       }
 
-      assertSeatsAvailable(tier, quantity);
-      await repository.updateTier({ ...tier, sold: tier.sold + quantity });
+      // One atomic step decides who gets the seats. No check before it: a check
+      // here would read a number that may already be out of date.
+      if (!(await repository.reserveSeats(tierId, quantity))) {
+        // Read again only to say how many seats are left in the message.
+        throw soldOutError((await repository.findTier(tierId)) ?? tier);
+      }
 
       const booking = {
         id: newId(),
@@ -64,7 +70,13 @@ export function createBookingService({ repository, paymentGateway, now = () => n
         status: 'pending',
         createdAt: now().toISOString(),
       };
-      return toPublicBooking(await repository.insertBooking(booking));
+      try {
+        return toPublicBooking(await repository.insertBooking(booking));
+      } catch (error) {
+        // The seats are ours but the booking was not saved: give them back.
+        await repository.releaseSeats(tierId, quantity);
+        throw error;
+      }
     },
 
     async getBooking(actorId, reference) {
@@ -101,8 +113,7 @@ export function createBookingService({ repository, paymentGateway, now = () => n
         throw new DomainError('INVALID_STATE', 'Only unpaid bookings can be cancelled for now');
       }
 
-      const tier = await repository.findTier(booking.tierId);
-      await repository.updateTier({ ...tier, sold: tier.sold - booking.quantity });
+      await repository.releaseSeats(booking.tierId, booking.quantity);
       const cancelled = { ...booking, status: 'cancelled', cancelledAt: now().toISOString() };
       return toPublicBooking(await repository.updateBooking(cancelled));
     },

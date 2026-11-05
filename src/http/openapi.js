@@ -34,11 +34,11 @@ export const openApiDocument = {
   openapi: '3.1.0',
   info: {
     title: 'Event Ticketing API',
-    version: '0.4.0',
+    version: '0.5.0',
     description: [
       'The Build 4 API: create events and ticket tiers, publish them, search, book, pay with a mock card and cancel.',
       '',
-      'Data is held **in memory** and is gone when the server stops.',
+      'Since Build 5, data is stored in **SQLite** (`data/ticketing.db`) and survives a restart. When many people book the last seats at the same moment, exactly enough of them succeed and the rest get `SOLD_OUT`.',
       '',
       '**Who you are.** Until Build 7 adds login, send an `x-user-id` header on every call that changes data.',
       '',

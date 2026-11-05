@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Event Ticketing API",
-    "version": "0.4.0",
-    "description": "The Build 4 API: create events and ticket tiers, publish them, search, book, pay with a mock card and cancel.\n\nData is held **in memory** and is gone when the server stops.\n\n**Who you are.** Until Build 7 adds login, send an `x-user-id` header on every call that changes data.\n\n**Money** is always a whole number of the smallest unit (kobo or cents): `500000` is 5,000.00.\n\n**Errors** always have the same shape: `{ \"error\": { \"code\": \"SOLD_OUT\", \"message\": \"...\" } }`."
+    "version": "0.5.0",
+    "description": "The Build 4 API: create events and ticket tiers, publish them, search, book, pay with a mock card and cancel.\n\nSince Build 5, data is stored in **SQLite** (`data/ticketing.db`) and survives a restart. When many people book the last seats at the same moment, exactly enough of them succeed and the rest get `SOLD_OUT`.\n\n**Who you are.** Until Build 7 adds login, send an `x-user-id` header on every call that changes data.\n\n**Money** is always a whole number of the smallest unit (kobo or cents): `500000` is 5,000.00.\n\n**Errors** always have the same shape: `{ \"error\": { \"code\": \"SOLD_OUT\", \"message\": \"...\" } }`."
   },
   "servers": [
     {
