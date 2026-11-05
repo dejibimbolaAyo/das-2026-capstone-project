@@ -38,10 +38,13 @@ export function seatsLeft(tier) {
   return tier.capacity - tier.sold;
 }
 
-export function assertSeatsAvailable(tier, quantity) {
+// The SOLD_OUT error, with a message that says how many seats are left.
+export function soldOutError(tier) {
   const left = seatsLeft(tier);
-  if (left < quantity) {
-    const message = left === 0 ? `${tier.name} is sold out` : `Only ${left} ticket(s) left in ${tier.name}`;
-    throw new DomainError('SOLD_OUT', message, { seatsLeft: left });
-  }
+  const message = left <= 0 ? `${tier.name} is sold out` : `Only ${left} ticket(s) left in ${tier.name}`;
+  return new DomainError('SOLD_OUT', message, { seatsLeft: Math.max(left, 0) });
+}
+
+export function assertSeatsAvailable(tier, quantity) {
+  if (seatsLeft(tier) < quantity) throw soldOutError(tier);
 }

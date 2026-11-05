@@ -8,10 +8,12 @@
     "node": ">=22.13"
   },
   "scripts": {
-    "start": "node src/server.js",
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
     "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec",
     "demo": "node scripts/demo.js",
     "benchmark": "node scripts/benchmark-lookup.js",
-    "export:openapi": "node scripts/export-openapi.js"
+    "export:openapi": "node scripts/export-openapi.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "oversell": "node --disable-warning=ExperimentalWarning scripts/oversell-demo.js"
   }
 }

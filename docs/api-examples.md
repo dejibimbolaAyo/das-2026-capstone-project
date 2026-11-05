@@ -9,9 +9,10 @@ npm start          # listens on http://localhost:3000
 
 The full reference, where you can also try each call, is at http://localhost:3000/docs.
 
-Data lives in memory, so it is gone when the server stops. Ids and booking
-references are new on every run: copy them from each response into the
-variables below.
+Since Build 5 the data is stored in SQLite (`data/ticketing.db`), so it survives
+a restart. Run `npm run seed` once for a few sample events, or delete the
+`data/` folder to start empty. Ids and booking references are new for every
+event and booking: copy them from each response into the variables below.
 
 Until Build 7 adds login, the caller says who they are with the `x-user-id`
 header. Calls that change data need it.
