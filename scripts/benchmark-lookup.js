@@ -2,7 +2,7 @@
 // Why do we keep bookings in a Map keyed by reference code?
 // Finding one booking in an array is O(n). In a Map it is O(1).
 
-import { referenceCode } from '../src/domain/ids.js';
+import { newReference } from '../src/domain/ids.js';
 
 const BOOKINGS = 100_000;
 const LOOKUPS = 500;
@@ -10,7 +10,7 @@ const LOOKUPS = 500;
 const list = [];
 const map = new Map();
 for (let i = 0; i < BOOKINGS; i += 1) {
-  const booking = { reference: referenceCode(), number: i };
+  const booking = { reference: newReference(), number: i };
   list.push(booking);
   map.set(booking.reference, booking);
 }

@@ -9,7 +9,7 @@ export function newId() {
 
 // 32 characters divides 256 evenly, so `byte % 32` has no bias.
 // Math.random() would work too, but it is not meant for codes people rely on.
-export function referenceCode(length = 8) {
+export function newReference(length = 8) {
   const bytes = randomBytes(length);
   let code = '';
   for (const byte of bytes) {

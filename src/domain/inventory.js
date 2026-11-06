@@ -2,7 +2,7 @@
 // No server, no database. Just objects, Maps and rules.
 // Build 4 replaces this file with services + repositories.
 
-import { newId, referenceCode } from './ids.js';
+import { newId, newReference } from './ids.js';
 import { Queue } from './waitlistQueue.js';
 import { DomainError } from './errors.js';
 import { summarizeEvent } from './eventSearch.js';
@@ -121,7 +121,7 @@ export function bookTickets(store, tierId, userId, quantity) {
 
   let reference;
   do {
-    reference = referenceCode();
+    reference = newReference();
   } while (store.bookingsByReference.has(reference));
 
   const booking = {
