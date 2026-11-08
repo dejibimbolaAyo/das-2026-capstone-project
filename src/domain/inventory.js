@@ -50,8 +50,27 @@ function getEvent(store, eventId) {
 
 export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
   const date = new Date(startsAt);
+
   if (Number.isNaN(date.getTime())) {
     throw new DomainError('VALIDATION', 'startsAt must be a valid date');
+  }
+
+  // Reject impossible calendar dates such as 2026-02-30.
+  if (typeof startsAt === 'string') {
+    const dateOnlyMatch = startsAt.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      const check = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+
+      if (
+        check.getUTCFullYear() !== Number(year) ||
+        check.getUTCMonth() !== Number(month) - 1 ||
+        check.getUTCDate() !== Number(day)
+      ) {
+        throw new DomainError('VALIDATION', 'startsAt must be a real calendar date');
+      }
+    }
   }
   const event = {
     id: newId(),
@@ -91,6 +110,17 @@ export function publishEvent(store, eventId) {
     throw new DomainError('INVALID_STATE', 'Add at least one ticket tier before publishing');
   }
   event.status = 'published';
+  return event;
+}
+
+export function unpublishEvent(store, eventId) {
+  const event = getEvent(store, eventId);
+
+  if (event.status !== 'published') {
+    throw new DomainError('INVALID_STATE', 'Only published events can be unpublished');
+  }
+
+  event.status = 'draft';
   return event;
 }
 
