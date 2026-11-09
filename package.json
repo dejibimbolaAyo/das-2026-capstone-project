@@ -10,6 +10,7 @@
   "scripts": {
     "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec",
     "demo": "node scripts/demo.js",
-    "benchmark": "node scripts/benchmark-lookup.js"
+    "benchmark": "node scripts/benchmark-lookup.js",
+      "start": "node src/server.js"
   }
 }
