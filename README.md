@@ -126,12 +126,13 @@ Read in this order:
 
 ### Your Build 1 task
 
-Follow the "Done when" list for Build 1 in [docs/milestones.md](docs/milestones.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
+Follow the "Done when" list in [docs/build-1.md](docs/build-1.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
 
 ## Documents
 
-- [docs/milestones.md](docs/milestones.md): the nine builds, what each delivers, and when it is done.
-- [docs/user-stories.md](docs/user-stories.md): the product backlog with acceptance criteria and the definition of done.
+- [docs/milestones.md](docs/milestones.md): the nine Builds at a glance, with a glossary.
+- [docs/build-1.md](docs/build-1.md) to [docs/build-9.md](docs/build-9.md): one file per Build, with its deliverables and its user stories with acceptance criteria.
+- [docs/user-stories.md](docs/user-stories.md): the product backlog and the definition of done.
 
 ## Rules of the road
 
@@ -143,7 +144,36 @@ Follow the "Done when" list for Build 1 in [docs/milestones.md](docs/milestones.
 ## Project layout
 
 ```
-src/domain/     plain rules: no I/O, no HTTP
-scripts/        things you run by hand
-docs/           milestones and user stories
+src/domain/        plain rules: no I/O, no HTTP
+src/services/      business rules for the API, using domain rules and a repository
+src/db/           SQLite schema (constraints) and the connection
+src/repositories/  data access only: SQLite for the server, in memory for comparison
+src/lib/           outside services, such as the mock payment gateway
+src/http/          router, routes and the HTTP server: translation only
+scripts/           things you run by hand
+docs/              milestones, user stories and API examples
 ```
+
+## Build 4: try the API
+
+```bash
+npm start
+```
+
+Open http://localhost:3000/docs for the API docs. Every route, its inputs and its errors are listed there, and you can send test requests from the page. The page is built from the OpenAPI document in `src/http/openapi.js`, served at `/openapi.json`, so change that file whenever you change a route.
+
+To use Hoppscotch, import `docs/hoppscotch/build-4.collection.json` (Collections, then Import, then Hoppscotch) and `docs/hoppscotch/local.environment.json` (Environments, then Import), select the environment, and run the folders in order. Each request saves the ids that the next one needs. You can also import `docs/openapi.json` into Hoppscotch, Postman or Insomnia; regenerate it with `npm run export:openapi`.
+
+For a walkthrough in the terminal, follow [docs/api-examples.md](docs/api-examples.md): every call, with `curl`, in the order create, publish, book, pay.
+
+## Build 5: SQLite and the last ticket
+
+```bash
+npm run seed       # once: adds a few published events to data/ticketing.db
+npm start          # the API now keeps its data after a restart
+npm run oversell   # 50 people try to book the last seat at the same moment
+```
+
+`npm run oversell` runs the race twice. The Build 4 way (read the tier, check in JavaScript, then save) lets all 50 bookings through. The Build 5 way takes the seats with one atomic statement, `UPDATE ticket_tiers SET sold = sold + ? WHERE id = ? AND sold + ? <= capacity`, and only the request that changed a row gets the seat: 1 succeeds, 49 get `SOLD_OUT`. `test/oversell.test.js` proves it, and fails if the fix is removed.
+
+The server's database lives in `data/ticketing.db` (set `DATABASE_PATH` to use another file). Delete the `data/` folder to start again. The schema, with its PRIMARY KEY, FOREIGN KEY, UNIQUE and CHECK constraints, is in `src/db/schema.sql`.
