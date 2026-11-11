@@ -1,0 +1,793 @@
+{
+  "v": 2,
+  "name": "Event Ticketing API (Build 4)",
+  "auth": {
+    "authType": "none",
+    "authActive": true
+  },
+  "headers": [],
+  "requests": [],
+  "folders": [
+    {
+      "v": 2,
+      "name": "1. Events (organizer)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "Create an event",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 201\", () => {\n  pw.expect(pw.response.status).toBe(201);\n});\npw.env.set(\"eventId\", pw.response.body.id);\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"title\": \"Lagos Tech Meetup\",\n  \"city\": \"Lagos\",\n  \"venue\": \"Landmark Centre\",\n  \"startsAt\": \"2026-12-05T17:00:00Z\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Add a ticket tier",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/tiers",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 201\", () => {\n  pw.expect(pw.response.status).toBe(201);\n});\npw.env.set(\"tierId\", pw.response.body.id);\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"General\",\n  \"priceCents\": 500000,\n  \"capacity\": 100\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Publish the event",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/publish",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Search published events",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/events",
+          "params": [
+            {
+              "key": "city",
+              "value": "lagos",
+              "active": true
+            },
+            {
+              "key": "maxPriceCents",
+              "value": "600000",
+              "active": true
+            },
+            {
+              "key": "sort",
+              "value": "price",
+              "active": true
+            }
+          ],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "View the event",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Unpublish the event",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/unpublish",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Publish it again",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/publish",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": []
+    },
+    {
+      "v": 2,
+      "name": "2. Bookings (attendee)",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "Book 2 tickets",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 201\", () => {\n  pw.expect(pw.response.status).toBe(201);\n});\npw.env.set(\"reference\", pw.response.body.reference);\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"tierId\": \"<<tierId>>\",\n  \"quantity\": 2\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "View the booking",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Pay with a declined card",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>/pay",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 402\", () => {\n  pw.expect(pw.response.status).toBe(402);\n});\npw.test(\"Error code is PAYMENT_DECLINED\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"PAYMENT_DECLINED\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"paymentToken\": \"tok_declined\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Pay with a valid card",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>/pay",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"paymentToken\": \"tok_success\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Pay again (refused, no second charge)",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>/pay",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 409\", () => {\n  pw.expect(pw.response.status).toBe(409);\n});\npw.test(\"Error code is INVALID_TRANSITION\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"INVALID_TRANSITION\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"paymentToken\": \"tok_success\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Book 1 more ticket to cancel",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 201\", () => {\n  pw.expect(pw.response.status).toBe(201);\n});\npw.env.set(\"cancelReference\", pw.response.body.reference);\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"tierId\": \"<<tierId>>\",\n  \"quantity\": 1\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Cancel the unpaid booking",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<cancelReference>>/cancel",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Cancel the paid booking (refused until Build 8)",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>/cancel",
+          "params": [],
+          "headers": [
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 409\", () => {\n  pw.expect(pw.response.status).toBe(409);\n});\npw.test(\"Error code is INVALID_STATE\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"INVALID_STATE\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": []
+    },
+    {
+      "v": 2,
+      "name": "3. Errors to show in class",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "Create an event with no title",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 400\", () => {\n  pw.expect(pw.response.status).toBe(400);\n});\npw.test(\"Error code is VALIDATION\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"VALIDATION\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"title\": \"\",\n  \"city\": \"Lagos\",\n  \"venue\": \"Landmark Centre\",\n  \"startsAt\": \"2026-12-05T17:00:00Z\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Create an event without x-user-id",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 401\", () => {\n  pw.expect(pw.response.status).toBe(401);\n});\npw.test(\"Error code is UNAUTHENTICATED\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"UNAUTHENTICATED\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"title\": \"Lagos Tech Meetup\",\n  \"city\": \"Lagos\",\n  \"venue\": \"Landmark Centre\",\n  \"startsAt\": \"2026-12-05T17:00:00Z\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Add a tier with a decimal price",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/tiers",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 400\", () => {\n  pw.expect(pw.response.status).toBe(400);\n});\npw.test(\"Error code is VALIDATION\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"VALIDATION\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"VIP\",\n  \"priceCents\": 19.99,\n  \"capacity\": 10\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Add a tier to an event that does not exist",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/no-such-event/tiers",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 404\", () => {\n  pw.expect(pw.response.status).toBe(404);\n});\npw.test(\"Error code is NOT_FOUND\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"NOT_FOUND\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"VIP\",\n  \"priceCents\": 1000,\n  \"capacity\": 10\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Add a tier as someone else",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/tiers",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 403\", () => {\n  pw.expect(pw.response.status).toBe(403);\n});\npw.test(\"Error code is FORBIDDEN\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"FORBIDDEN\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"VIP\",\n  \"priceCents\": 1000,\n  \"capacity\": 10\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Add a 1-seat tier",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/events/<<eventId>>/tiers",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<organizerId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 201\", () => {\n  pw.expect(pw.response.status).toBe(201);\n});\npw.env.set(\"smallTierId\", pw.response.body.id);\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"name\": \"Front row\",\n  \"priceCents\": 900000,\n  \"capacity\": 1\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Book 2 seats when 1 is left",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 409\", () => {\n  pw.expect(pw.response.status).toBe(409);\n});\npw.test(\"Error code is SOLD_OUT\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"SOLD_OUT\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"tierId\": \"<<smallTierId>>\",\n  \"quantity\": 2\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Book 11 tickets (max is 10)",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<attendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 400\", () => {\n  pw.expect(pw.response.status).toBe(400);\n});\npw.test(\"Error code is VALIDATION\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"VALIDATION\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"tierId\": \"<<tierId>>\",\n  \"quantity\": 11\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Pay someone else's booking",
+          "method": "POST",
+          "endpoint": "<<baseUrl>>/api/bookings/<<reference>>/pay",
+          "params": [],
+          "headers": [
+            {
+              "key": "content-type",
+              "value": "application/json",
+              "active": true
+            },
+            {
+              "key": "x-user-id",
+              "value": "<<otherAttendeeId>>",
+              "active": true
+            }
+          ],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 403\", () => {\n  pw.expect(pw.response.status).toBe(403);\n});\npw.test(\"Error code is FORBIDDEN\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"FORBIDDEN\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": "application/json",
+            "body": "{\n  \"paymentToken\": \"tok_success\"\n}"
+          }
+        },
+        {
+          "v": "1",
+          "name": "Search with an unknown sort",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/events",
+          "params": [
+            {
+              "key": "sort",
+              "value": "random",
+              "active": true
+            }
+          ],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 400\", () => {\n  pw.expect(pw.response.status).toBe(400);\n});\npw.test(\"Error code is VALIDATION\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"VALIDATION\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "Unknown API route",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/api/nothing-here",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 404\", () => {\n  pw.expect(pw.response.status).toBe(404);\n});\npw.test(\"Error code is NOT_FOUND\", () => {\n  pw.expect(pw.response.body.error.code).toBe(\"NOT_FOUND\");\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": []
+    },
+    {
+      "v": 2,
+      "name": "4. System",
+      "folders": [],
+      "requests": [
+        {
+          "v": "1",
+          "name": "Health check",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/health",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        },
+        {
+          "v": "1",
+          "name": "OpenAPI document",
+          "method": "GET",
+          "endpoint": "<<baseUrl>>/openapi.json",
+          "params": [],
+          "headers": [],
+          "preRequestScript": "",
+          "testScript": "pw.test(\"Status is 200\", () => {\n  pw.expect(pw.response.status).toBe(200);\n});\n",
+          "auth": {
+            "authType": "none",
+            "authActive": true
+          },
+          "body": {
+            "contentType": null,
+            "body": null
+          }
+        }
+      ],
+      "auth": {
+        "authType": "inherit",
+        "authActive": true
+      },
+      "headers": []
+    }
+  ]
+}
