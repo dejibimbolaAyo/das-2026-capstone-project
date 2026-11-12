@@ -4,11 +4,43 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Event Ticketing</title>
+    <link rel="stylesheet" href="/css/styles.css">
   </head>
   <body>
+    <header class="site-header">
+      <a class="brand" href="/">Event Ticketing</a>
+      <a href="/docs">API docs</a>
+    </header>
     <main>
-      <h1>Event Ticketing</h1>
-      <p>The Build 4 server is running. Read the <a href="/docs">API docs</a>.</p>
+      <h1>Find an event</h1>
+
+      <form id="filters" class="filters">
+        <div class="field">
+          <label for="q">Search events</label>
+          <input id="q" name="q" type="search" placeholder="Title or venue">
+        </div>
+        <div class="field">
+          <label for="city">City</label>
+          <select id="city" name="city"><option value="">All cities</option></select>
+        </div>
+        <div class="field">
+          <label for="maxPrice">Maximum price (₦)</label>
+          <input id="maxPrice" name="maxPrice" type="number" min="0" step="100" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="sort">Sort by</label>
+          <select id="sort" name="sort">
+            <option value="date">Date</option>
+            <option value="price">Price</option>
+            <option value="availability">Availability</option>
+          </select>
+        </div>
+        <button type="submit" class="primary">Apply</button>
+      </form>
+
+      <p id="status" role="status" class="status"></p>
+      <ul id="events" class="event-list"></ul>
     </main>
+    <script type="module" src="/js/pages/home.js"></script>
   </body>
 </html>
