@@ -19,7 +19,7 @@ import { useEvents } from '../hooks/useEvents.js';
 const CITIES = ['Lagos', 'Abuja', 'Ibadan', 'Port Harcourt'];
 
 // One place decides what the results area shows: loading, error, empty or the list.
-function Results({ events, status }) {
+function Results({ events, status, error }) {
   if (status === 'loading') {
     return (
       <Box>
@@ -34,7 +34,7 @@ function Results({ events, status }) {
       </Box>
     );
   }
-  if (status === 'error') return <Alert severity="error">Could not load events. Please try again.</Alert>;
+  if (status === 'error') return <Alert severity="error">Could not load events. {error}</Alert>;
   if (status === 'empty') return <Typography role="status">No events match. Try clearing a filter.</Typography>;
 
   return (
@@ -63,7 +63,7 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [sort, setSort] = useState('date');
   const [onlyAvailable, setOnlyAvailable] = useState(false);
-  const { events, status } = useEvents({ q, city, onlyAvailable, sort });
+  const { events, status, error } = useEvents({ q, city, onlyAvailable, sort });
 
   return (
     <Stack spacing={3}>
@@ -103,7 +103,7 @@ export default function Home() {
         />
       </Stack>
 
-      <Results events={events} status={status} />
+      <Results events={events} status={status} error={error} />
     </Stack>
   );
 }
