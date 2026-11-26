@@ -5,6 +5,7 @@ import {
   createEvent,
   addTier,
   publishEvent,
+  listEventSummaries,
   bookTickets,
   cancelBooking,
   joinWaitlist,
@@ -13,6 +14,7 @@ import {
   seatsLeft,
 } from '../src/domain/inventory.js';
 import { DomainError } from '../src/domain/errors.js';
+import { filterEvents, searchEvents, sortEvents } from '../src/domain/eventSearch.js';
 
 const throwsCode = (fn, code) =>
   assert.throws(fn, (error) => error instanceof DomainError && error.code === code);
@@ -38,17 +40,89 @@ describe('inventory', () => {
       assert.equal(event.status, 'draft');
     });
 
+    it('saves a valid event as a draft with an id and hides it from the public list', () => {
+      const created = createEvent(store, {
+        title: 'Lagos Meetup',
+        city: 'Lagos',
+        venue: 'Yaba Hub',
+        startsAt: '2026-12-05T17:00:00Z',
+        organizerId: 'org-2',
+      });
+
+      assert.ok(created.id);
+      assert.equal(created.status, 'draft');
+      assert.equal(created.venue, 'Yaba Hub');
+      assert.deepEqual(listEventSummaries(store), []);
+    });
+
     it('rejects a missing title, a bad date and bad numbers', () => {
+      const eventCount = store.events.size;
       throwsCode(() => createEvent(store, { title: ' ', city: 'x', startsAt: '2026-12-05' }), 'VALIDATION');
+      throwsCode(() => createEvent(store, { title: 'x', city: ' ', startsAt: '2026-12-05' }), 'VALIDATION');
       throwsCode(() => createEvent(store, { title: 'x', city: 'x', startsAt: 'nope' }), 'VALIDATION');
+      throwsCode(() => createEvent(store, { title: 'x', city: 'x', startsAt: '2026-02-30' }), 'VALIDATION');
       throwsCode(() => addTier(store, event.id, { name: 'x', priceCents: 19.99, capacity: 5 }), 'VALIDATION');
       throwsCode(() => addTier(store, event.id, { name: 'x', priceCents: 100, capacity: 0 }), 'VALIDATION');
+      assert.equal(store.events.size, eventCount);
+    });
+
+    it('adds a tier with its capacity, whole-cent price and zero tickets sold', () => {
+      const added = addTier(store, event.id, { name: 'General', priceCents: 500000, capacity: 100 });
+
+      assert.equal(added.name, 'General');
+      assert.equal(added.priceCents, 500000);
+      assert.equal(added.capacity, 100);
+      assert.equal(added.sold, 0);
+      assert.equal(seatsLeft(added), 100);
+    });
+
+    it('returns NOT_FOUND when adding a tier to an unknown event', () => {
+      throwsCode(() => addTier(store, 'missing-event', {
+        name: 'General',
+        priceCents: 500,
+        capacity: 5,
+      }), 'NOT_FOUND');
     });
 
     it('cannot publish an event with no tiers', () => {
       const empty = createEvent(store, { title: 'Empty', city: 'Abuja', startsAt: '2026-12-06' });
       throwsCode(() => publishEvent(store, empty.id), 'INVALID_STATE');
+      assert.equal(empty.status, 'draft');
+      assert.deepEqual(listEventSummaries(store), []);
       assert.equal(publishEvent(store, event.id).status, 'published');
+    });
+
+    it('returns NOT_FOUND when publishing an unknown event', () => {
+      throwsCode(() => publishEvent(store, 'missing-event'), 'NOT_FOUND');
+    });
+
+    it('lists summaries only after publishing by default', () => {
+      assert.deepEqual(listEventSummaries(store), []);
+      assert.equal(listEventSummaries(store, { publishedOnly: false }).length, 1);
+      publishEvent(store, event.id);
+
+      assert.deepEqual(listEventSummaries(store).map((summary) => ({
+        id: summary.id,
+        title: summary.title,
+        city: summary.city,
+        venue: summary.venue,
+        minPriceCents: summary.minPriceCents,
+        seatsLeft: summary.seatsLeft,
+      })), [{
+        id: event.id,
+        title: 'Test Event',
+        city: 'Lagos',
+        venue: '',
+        minPriceCents: 2500,
+        seatsLeft: 3,
+      }]);
+
+      const summaries = listEventSummaries(store);
+      assert.deepEqual(filterEvents(summaries, { city: 'lagos' }).map((summary) => summary.id), [event.id]);
+      assert.deepEqual(sortEvents(summaries, 'price').map((summary) => summary.id), [event.id]);
+      assert.deepEqual(searchEvents(summaries, { maxPriceCents: 2500 }, 'date').map((summary) => summary.id), [
+        event.id,
+      ]);
     });
   });
 

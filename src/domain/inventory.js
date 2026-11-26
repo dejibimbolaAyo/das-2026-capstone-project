@@ -48,11 +48,24 @@ function getEvent(store, eventId) {
   return event;
 }
 
-export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
-  const date = new Date(startsAt);
-  if (Number.isNaN(date.getTime())) {
-    throw new DomainError('VALIDATION', 'startsAt must be a valid date');
+function parseStartsAt(value) {
+  const datePart = typeof value === 'string' ? value.slice(0, 10) : '';
+  const isIsoDate = /^\d{4}-\d{2}-\d{2}$/.test(datePart)
+    && (value.length === 10 || value[10] === 'T');
+  const calendarDate = isIsoDate ? new Date(`${datePart}T00:00:00.000Z`) : undefined;
+  const date = new Date(value);
+
+  if (!isIsoDate
+    || Number.isNaN(calendarDate.getTime())
+    || calendarDate.toISOString().slice(0, 10) !== datePart
+    || Number.isNaN(date.getTime())) {
+    throw new DomainError('VALIDATION', 'startsAt must be a valid ISO date');
   }
+  return date;
+}
+
+export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
+  const date = parseStartsAt(startsAt);
   const event = {
     id: newId(),
     organizerId,

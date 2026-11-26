@@ -16,3 +16,8 @@ Every time you give an AI tool a significant prompt, add an entry. Three lines e
 - **What I asked:** Add event search and filters, stable merge sorting without `Array.sort`, automated tests, and Build 2 user-story acceptance criteria.
 - **What came back:** Pure search and sorting functions, a Node built-in test suite, and documentation for the filter and sorting rules.
 - **What was wrong (or "nothing"):** Two events without ticket tiers both have no price. Comparing their infinite price values by subtraction produces `NaN`, which breaks the stable ordering. I changed the comparator to explicitly return equality for equal values and added a regression test. All six tests pass with Node v26.13.1.
+
+### Prompt 2: Summary-based event search
+- **What I asked:** Follow the Build 2 AI prompt and change search to `filterEvents`, summary-based `sortEvents`, and `searchEvents`, while keeping `summarizeEvent`.
+- **What came back:** The existing inventory already had `publishEvent`, `listEventSummaries`, and the merge-sort helper; I adapted search and sorting to those summaries and expanded the acceptance tests.
+- **What was wrong (or "nothing"):** The earlier search API used events plus a tier `Map`, returned plain `TypeError`s for invalid criteria, and accepted impossible calendar dates in inventory creation. The package file also had duplicate `test` keys. I changed the API to raise `DomainError('VALIDATION', ...)`, validate real ISO calendar dates, and keep one Node test command.

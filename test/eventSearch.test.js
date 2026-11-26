@@ -1,90 +1,118 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { searchEvents, sortEvents } from '../src/domain/eventSearch.js';
+import { filterEvents, searchEvents, sortEvents } from '../src/domain/eventSearch.js';
+import { DomainError } from '../src/domain/errors.js';
 
-const tiers = new Map([
-  ['tier-a', { id: 'tier-a', eventId: 'event-a', priceCents: 5000, capacity: 20, sold: 5 }],
-  ['tier-b', { id: 'tier-b', eventId: 'event-b', priceCents: 3000, capacity: 10, sold: 2 }],
-  ['tier-c', { id: 'tier-c', eventId: 'event-c', priceCents: 3000, capacity: 10, sold: 2 }],
-  ['tier-d', { id: 'tier-d', eventId: 'event-d', priceCents: 9000, capacity: 5, sold: 5 }],
-]);
-
-const events = [
+const summaries = [
   {
     id: 'event-a', title: 'Lagos Music Night', city: 'Lagos', venue: 'Island Hall',
-    startsAt: '2026-12-10T18:00:00.000Z', tierIds: ['tier-a'],
+    startsAt: '2026-12-10T18:00:00.000Z', minPriceCents: 5000, seatsLeft: 15,
   },
   {
-    id: 'event-b', title: 'Abuja Comedy Show', city: 'Abuja', venue: 'City Stage',
-    startsAt: '2026-12-08T19:00:00.000Z', tierIds: ['tier-b'],
+    id: 'event-b', title: 'Abuja Jazz Night', city: 'Abuja', venue: 'City Stage',
+    startsAt: '2026-12-08T19:00:00.000Z', minPriceCents: 3000, seatsLeft: 8,
   },
   {
     id: 'event-c', title: 'Lagos Tech Meetup', city: 'Lagos', venue: 'Yaba Hub',
-    startsAt: '2026-12-08T12:00:00.000Z', tierIds: ['tier-c'],
+    startsAt: '2026-12-05T17:00:00.000Z', minPriceCents: 5000, seatsLeft: 0,
   },
   {
     id: 'event-d', title: 'Lagos Art Fair', city: 'Lagos', venue: 'Main Gallery',
-    startsAt: '2026-12-12T10:00:00.000Z', tierIds: ['tier-d'],
+    startsAt: '2026-12-12T10:00:00.000Z', minPriceCents: null, seatsLeft: 0,
   },
 ];
 
-test('search combines text, city, inclusive date and price filters', () => {
-  const results = searchEvents(events, tiers, {
-    text: 'LAGOS',
-    city: 'lagos',
-    startDate: '2026-12-08',
-    endDate: '2026-12-10',
-    minPriceCents: 4000,
-    maxPriceCents: 6000,
-  });
-
-  assert.deepEqual(results.map((event) => event.id), ['event-a']);
+test('filterEvents matches title and venue text without caring about case', () => {
+  assert.deepEqual(filterEvents(summaries, { q: 'JAZZ' }).map((event) => event.id), ['event-b']);
+  assert.deepEqual(filterEvents(summaries, { q: 'HALL' }).map((event) => event.id), ['event-a']);
 });
 
-test('search returns a new list and leaves the original unchanged', () => {
-  const original = events.slice();
-  const results = searchEvents(events, tiers, { city: 'Lagos' });
-
-  assert.notStrictEqual(results, events);
-  assert.deepEqual(events, original);
+test('city filtering is exact and ignores letter case', () => {
+  assert.deepEqual(filterEvents(summaries, { city: 'lagos' }).map((event) => event.id), [
+    'event-a', 'event-c', 'event-d',
+  ]);
+  assert.deepEqual(filterEvents(summaries, { city: 'Lago' }), []);
 });
 
-test('merge sort orders events by date, price, and availability', () => {
+test('maximum price filters by cheapest tier and excludes events with no tiers', () => {
   assert.deepEqual(
-    sortEvents(events, tiers, { by: 'date' }).map((event) => event.id),
-    ['event-c', 'event-b', 'event-a', 'event-d'],
+    searchEvents(summaries, { maxPriceCents: 4000 }, 'price').map((event) => event.id),
+    ['event-b'],
   );
-  assert.deepEqual(
-    sortEvents(events, tiers, { by: 'price' }).map((event) => event.id),
-    ['event-b', 'event-c', 'event-a', 'event-d'],
-  );
-  assert.deepEqual(
-    sortEvents(events, tiers, { by: 'availability', direction: 'desc' }).map((event) => event.id),
-    ['event-a', 'event-b', 'event-c', 'event-d'],
-  );
+  assert.deepEqual(sortEvents(summaries, 'price').map((event) => event.id), [
+    'event-b', 'event-a', 'event-c', 'event-d',
+  ]);
 });
 
-test('sort returns a new list and leaves the original unchanged', () => {
-  const original = events.slice();
-  const sorted = sortEvents(events, tiers, { by: 'date' });
-
-  assert.notStrictEqual(sorted, events);
-  assert.deepEqual(events, original);
-});
-
-test('equal sort values keep their original order', () => {
-  const tied = [events[1], events[2]];
-  const sorted = sortEvents(tied, tiers, { by: 'price' });
-
-  assert.deepEqual(sorted.map((event) => event.id), ['event-b', 'event-c']);
-});
-
-test('events without tiers sort as no price and zero availability', () => {
-  const noTiers = [
-    { id: 'first', title: 'First', city: 'Lagos', startsAt: '2026-12-10T00:00:00Z', tierIds: [] },
-    { id: 'second', title: 'Second', city: 'Lagos', startsAt: '2026-12-10T00:00:00Z' },
+test('date sorting orders days first, then titles and ids', () => {
+  const sameDay = [
+    { ...summaries[0], id: 'z-id', title: 'Same title', startsAt: '2026-12-05T23:00:00.000Z' },
+    { ...summaries[1], id: 'a-id', title: 'Same title', startsAt: '2026-12-05T01:00:00.000Z' },
+    { ...summaries[2], id: 'later-day', title: 'Earlier title', startsAt: '2026-12-06T00:00:00.000Z' },
   ];
 
-  assert.deepEqual(sortEvents(noTiers, tiers, { by: 'price' }).map((event) => event.id), ['first', 'second']);
-  assert.deepEqual(sortEvents(noTiers, tiers, { by: 'availability' }).map((event) => event.id), ['first', 'second']);
+  assert.deepEqual(sortEvents(sameDay, 'date').map((event) => event.id), [
+    'a-id', 'z-id', 'later-day',
+  ]);
+});
+
+test('date-only end filters include events through the end of that day', () => {
+  assert.deepEqual(
+    filterEvents(summaries, { to: '2026-12-05' }).map((event) => event.id),
+    ['event-c'],
+  );
+  assert.deepEqual(
+    filterEvents(summaries, { from: '2026-12-05', to: '2026-12-05' }).map((event) => event.id),
+    ['event-c'],
+  );
+});
+
+test('availability sorting puts the most seats left first and can filter sold-out events', () => {
+  assert.deepEqual(sortEvents(summaries, 'availability').map((event) => event.id), [
+    'event-a', 'event-b', 'event-d', 'event-c',
+  ]);
+  assert.deepEqual(filterEvents(summaries, { onlyAvailable: true }).map((event) => event.id), [
+    'event-a', 'event-b',
+  ]);
+});
+
+test('empty input returns a new empty list', () => {
+  const empty = [];
+  const filtered = filterEvents(empty);
+  const sorted = sortEvents(empty, 'date');
+  assert.deepEqual(filtered, []);
+  assert.deepEqual(sorted, []);
+  assert.notStrictEqual(filtered, empty);
+  assert.notStrictEqual(sorted, empty);
+});
+
+test('filtering, sorting and searching do not change the original list', () => {
+  const original = summaries.slice();
+  const snapshot = structuredClone(summaries);
+  const filtered = filterEvents(summaries, { city: 'Lagos' });
+  const sorted = sortEvents(summaries, 'date');
+  const searched = searchEvents(summaries, { maxPriceCents: 5000 }, 'price');
+
+  for (const result of [filtered, sorted, searched]) {
+    assert.notStrictEqual(result, summaries);
+  }
+  assert.deepEqual(summaries, snapshot);
+  assert.deepEqual(summaries, original);
+});
+
+test('invalid dates, fractional prices and unknown sort options use VALIDATION errors', () => {
+  for (const badDate of ['not-a-date', '2026-02-30']) {
+    assert.throws(
+      () => filterEvents(summaries, { from: badDate }),
+      (error) => error instanceof DomainError && error.code === 'VALIDATION',
+    );
+  }
+  assert.throws(
+    () => searchEvents(summaries, { maxPriceCents: 12.5 }, 'price'),
+    (error) => error instanceof DomainError && error.code === 'VALIDATION',
+  );
+  assert.throws(
+    () => sortEvents(summaries, 'unknown'),
+    (error) => error instanceof DomainError && error.code === 'VALIDATION',
+  );
 });

@@ -136,12 +136,13 @@ Run the automated tests with:
 npm test
 ```
 
-The pure functions in `src/domain/eventSearch.js` receive an event array and the store's tier `Map`:
+`listEventSummaries(store)` makes the small event records used by the pure functions in `src/domain/eventSearch.js`:
 
-- `searchEvents(events, tiers, filters)` returns matching events in their current order. Text checks title, city and venue without caring about letter case. City matches the whole city name. Date-only start and end values include those complete UTC calendar days. A price range matches if at least one tier is in range; prices are whole cents.
-- `sortEvents(events, tiers, { by, direction })` returns a new list sorted by `date`, cheapest tier `price`, or total `availability`. Direction is `asc` or `desc` and defaults to ascending.
-- Both make a new array rather than changing the supplied event list. The merge sort splits the list, sorts the halves, then merges them together. When values tie, it takes the earlier item first, so their original order is kept.
-- Events without tiers have no price and are treated as having zero seats left. The functions do not decide whether an event is published; pass in the list of events appropriate for the caller.
+- `filterEvents(summaries, criteria)` filters by `q` (title or venue), exact city, inclusive `from`/`to` dates, `maxPriceCents`, and `onlyAvailable`. A date-only `to` includes the whole UTC day. An event with no tiers is not included in a price filter.
+- `sortEvents(summaries, sortBy)` orders by earliest calendar date, cheapest tier price (no price last), or most seats left. Ties are broken by title then id.
+- `searchEvents(summaries, criteria, sortBy)` filters and then sorts.
+- These functions return new arrays and do not change the supplied list. `mergeSort` in `src/domain/sorting.js` splits the list, sorts each half, and merges the halves; it takes the earlier item when values compare equally, which keeps the sort stable.
+- Bad dates, non-whole-cent prices, and unknown sort options raise a `DomainError` with code `VALIDATION`.
 
 ## Documents
 

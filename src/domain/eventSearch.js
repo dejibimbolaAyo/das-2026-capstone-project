@@ -1,142 +1,108 @@
-// Search and sorting work on event lists without changing the caller's list.
-
-function tiersForEvent(event, tiers) {
-  return (event.tierIds ?? [])
-    .map((tierId) => tiers.get(tierId))
-    .filter(Boolean);
-}
-
-function eventPrice(event, tiers) {
-  return tiersForEvent(event, tiers)
-    .reduce((lowest, tier) => Math.min(lowest, tier.priceCents), Infinity);
-}
-
-function eventAvailability(event, tiers) {
-  return tiersForEvent(event, tiers)
-    .reduce((total, tier) => total + tier.capacity - tier.sold, 0);
-}
+import { DomainError } from './errors.js';
+import { mergeSort } from './sorting.js';
 
 function dateBound(value, endOfDay = false) {
   if (value === undefined) return undefined;
+  if (typeof value !== 'string') {
+    throw new DomainError('VALIDATION', 'Date filters must be ISO date strings');
+  }
 
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value);
-  const date = new Date(dateOnly ? `${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z` : value);
+  const datePart = value.slice(0, 10);
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(datePart);
+  if (!dateOnly || (value.length > 10 && value[10] !== 'T')) {
+    throw new DomainError('VALIDATION', 'Date filters must be ISO date strings');
+  }
+
+  const calendarDate = new Date(`${datePart}T00:00:00.000Z`);
+  if (Number.isNaN(calendarDate.getTime()) || calendarDate.toISOString().slice(0, 10) !== datePart) {
+    throw new DomainError('VALIDATION', 'Date filters must be valid dates');
+  }
+
+  if (dateOnly) {
+    return new Date(`${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`).getTime();
+  }
+
+  const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
-    throw new TypeError('Date filters must be valid date strings');
+    throw new DomainError('VALIDATION', 'Date filters must be valid dates');
   }
   return date.getTime();
 }
 
-function validatePriceFilter(value, name) {
+function validatePrice(value) {
   if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
-    throw new TypeError(`${name} must be a non-negative whole number of cents`);
+    throw new DomainError('VALIDATION', 'maxPriceCents must be a non-negative whole number');
   }
 }
 
-/**
- * Return matching events in their original order.
- * Price filters match an event when at least one tier is in the price range.
- */
-export function searchEvents(events, tiers, filters = {}) {
-  const {
-    text = '',
-    city,
-    startDate,
-    endDate,
-    minPriceCents,
-    maxPriceCents,
-  } = filters;
+export function filterEvents(summaries, {
+  q = '',
+  city,
+  from,
+  to,
+  maxPriceCents,
+  onlyAvailable = false,
+} = {}) {
+  if (typeof q !== 'string' || (city !== undefined && typeof city !== 'string')) {
+    throw new DomainError('VALIDATION', 'Search text and city must be strings');
+  }
+  validatePrice(maxPriceCents);
 
-  validatePriceFilter(minPriceCents, 'minPriceCents');
-  validatePriceFilter(maxPriceCents, 'maxPriceCents');
-
-  const start = dateBound(startDate);
-  const end = dateBound(endDate, true);
-  const query = text.trim().toLocaleLowerCase();
+  const fromTime = dateBound(from);
+  const toTime = dateBound(to, true);
+  const query = q.trim().toLocaleLowerCase();
   const cityQuery = city?.trim().toLocaleLowerCase();
 
-  return events.filter((event) => {
-    const searchableText = `${event.title} ${event.city} ${event.venue ?? ''}`.toLocaleLowerCase();
+  return summaries.filter((event) => {
+    const searchableText = `${event.title} ${event.venue ?? ''}`.toLocaleLowerCase();
     if (query && !searchableText.includes(query)) return false;
     if (cityQuery && event.city.toLocaleLowerCase() !== cityQuery) return false;
 
     const eventTime = new Date(event.startsAt).getTime();
-    if (start !== undefined && eventTime < start) return false;
-    if (end !== undefined && eventTime > end) return false;
-
-    if (minPriceCents !== undefined || maxPriceCents !== undefined) {
-      const eventTiers = tiersForEvent(event, tiers);
-      const hasMatchingPrice = eventTiers.some((tier) =>
-        (minPriceCents === undefined || tier.priceCents >= minPriceCents)
-        && (maxPriceCents === undefined || tier.priceCents <= maxPriceCents));
-      if (!hasMatchingPrice) return false;
-    }
-
+    if (fromTime !== undefined && eventTime < fromTime) return false;
+    if (toTime !== undefined && eventTime > toTime) return false;
+    if (maxPriceCents !== undefined
+      && (event.minPriceCents === null || event.minPriceCents > maxPriceCents)) return false;
+    if (onlyAvailable && event.seatsLeft <= 0) return false;
     return true;
   });
 }
 
-function compareEvents(left, right, by, tiers) {
-  let leftValue;
-  let rightValue;
+function compareText(left, right) {
+  return left.localeCompare(right, undefined, { sensitivity: 'base' });
+}
 
-  if (by === 'date') {
-    leftValue = new Date(left.startsAt).getTime();
-    rightValue = new Date(right.startsAt).getTime();
-  } else if (by === 'price') {
-    leftValue = eventPrice(left, tiers);
-    rightValue = eventPrice(right, tiers);
+function compareTitleAndId(left, right) {
+  return compareText(left.title, right.title) || compareText(left.id, right.id);
+}
+
+function compareEvents(left, right, sortBy) {
+  let comparison = 0;
+
+  if (sortBy === 'date') {
+    const leftDay = new Date(left.startsAt).toISOString().slice(0, 10);
+    const rightDay = new Date(right.startsAt).toISOString().slice(0, 10);
+    comparison = compareText(leftDay, rightDay);
+  } else if (sortBy === 'price') {
+    if (left.minPriceCents === null) return right.minPriceCents === null ? compareTitleAndId(left, right) : 1;
+    if (right.minPriceCents === null) return -1;
+    comparison = left.minPriceCents - right.minPriceCents;
   } else {
-    leftValue = eventAvailability(left, tiers);
-    rightValue = eventAvailability(right, tiers);
+    comparison = right.seatsLeft - left.seatsLeft;
   }
 
-  if (leftValue === rightValue) return 0;
-  return leftValue < rightValue ? -1 : 1;
+  return comparison || compareTitleAndId(left, right);
 }
 
-function merge(left, right, compare) {
-  const result = [];
-  let leftIndex = 0;
-  let rightIndex = 0;
-
-  while (leftIndex < left.length && rightIndex < right.length) {
-    // Taking from the left on ties keeps equal events in their original order.
-    if (compare(left[leftIndex], right[rightIndex]) <= 0) {
-      result.push(left[leftIndex]);
-      leftIndex += 1;
-    } else {
-      result.push(right[rightIndex]);
-      rightIndex += 1;
-    }
+export function sortEvents(summaries, sortBy) {
+  if (!['date', 'price', 'availability'].includes(sortBy)) {
+    throw new DomainError('VALIDATION', 'sortBy must be date, price, or availability');
   }
-
-  return result.concat(left.slice(leftIndex), right.slice(rightIndex));
+  return mergeSort(summaries, (left, right) => compareEvents(left, right, sortBy));
 }
 
-function mergeSort(events, compare) {
-  if (events.length < 2) return events;
-
-  const middle = Math.floor(events.length / 2);
-  const left = mergeSort(events.slice(0, middle), compare);
-  const right = mergeSort(events.slice(middle), compare);
-  return merge(left, right, compare);
-}
-
-/**
- * Sort by date, cheapest tier price, or total seats left, using a stable merge sort.
- */
-export function sortEvents(events, tiers, { by = 'date', direction = 'asc' } = {}) {
-  if (!['date', 'price', 'availability'].includes(by)) {
-    throw new TypeError('Sort by must be date, price, or availability');
-  }
-  if (!['asc', 'desc'].includes(direction)) {
-    throw new TypeError('Sort direction must be asc or desc');
-  }
-
-  const directionMultiplier = direction === 'asc' ? 1 : -1;
-  const compare = (left, right) => directionMultiplier * compareEvents(left, right, by, tiers);
-  return mergeSort(events.slice(), compare);
+export function searchEvents(summaries, criteria = {}, sortBy = 'date') {
+  return sortEvents(filterEvents(summaries, criteria), sortBy);
 }
 
 export function summarizeEvent(event, tiers) {
