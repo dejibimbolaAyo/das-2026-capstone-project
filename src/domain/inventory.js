@@ -5,6 +5,7 @@
 import { newId, referenceCode } from './ids.js';
 import { Queue } from './waitlistQueue.js';
 import { DomainError } from './errors.js';
+import { summarizeEvent } from './eventSearch.js';
 
 export const MAX_TICKETS_PER_BOOKING = 10;
 
@@ -41,6 +42,12 @@ function getTier(store, tierId) {
   return tier;
 }
 
+function getEvent(store, eventId) {
+  const event = store.events.get(eventId);
+  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  return event;
+}
+
 export function createEvent(store, { title, city, venue = '', startsAt, organizerId }) {
   const date = new Date(startsAt);
   if (Number.isNaN(date.getTime())) {
@@ -61,8 +68,7 @@ export function createEvent(store, { title, city, venue = '', startsAt, organize
 }
 
 export function addTier(store, eventId, { name, priceCents, capacity }) {
-  const event = store.events.get(eventId);
-  if (!event) throw new DomainError('NOT_FOUND', 'Event not found');
+  const event = getEvent(store, eventId);
 
   const tier = {
     id: newId(),
@@ -77,6 +83,22 @@ export function addTier(store, eventId, { name, priceCents, capacity }) {
   store.waitlists.set(tier.id, new Queue());
   event.tierIds.push(tier.id);
   return tier;
+}
+
+export function publishEvent(store, eventId) {
+  const event = getEvent(store, eventId);
+  if (event.tierIds.length === 0) {
+    throw new DomainError('INVALID_STATE', 'Add at least one ticket tier before publishing');
+  }
+  event.status = 'published';
+  return event;
+}
+
+// What the public event list is built from. Drafts are hidden unless asked for.
+export function listEventSummaries(store, { publishedOnly = true } = {}) {
+  return [...store.events.values()]
+    .filter((event) => !publishedOnly || event.status === 'published')
+    .map((event) => summarizeEvent(event, event.tierIds.map((id) => store.tiers.get(id))));
 }
 
 export function seatsLeft(tier) {
