@@ -6,13 +6,15 @@
 -- in the JavaScript cannot store a booking for a tier that does not exist, or
 -- sell more seats than a tier has.
 
--- Until Build 7 adds signup, a user row is created the first time an id is
--- seen (in the x-user-id header). name, email and role are filled in later.
+-- Build 9: people sign up with an email and password. The password is stored
+-- only as a scrypt hash, never as text. connection.js adds password_hash to a
+-- database made before Build 9.
 CREATE TABLE IF NOT EXISTS users (
-  id          TEXT PRIMARY KEY,
-  name        TEXT,
-  email       TEXT UNIQUE,
-  role        TEXT CHECK (role IN ('organizer', 'attendee', 'staff')),
+  id             TEXT PRIMARY KEY,
+  name           TEXT,
+  email          TEXT UNIQUE,
+  role           TEXT CHECK (role IN ('organizer', 'attendee', 'staff')),
+  password_hash  TEXT,
   created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
 

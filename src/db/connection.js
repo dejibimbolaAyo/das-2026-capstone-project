@@ -25,5 +25,9 @@ export function openDatabase(path = MEMORY) {
     db.exec('PRAGMA busy_timeout = 5000;');
   }
   db.exec(SCHEMA);
+  // A database made before Build 9 has no password_hash column. CREATE TABLE IF
+  // NOT EXISTS does not change an existing table, so add the column here.
+  const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
+  if (!userColumns.includes('password_hash')) db.exec('ALTER TABLE users ADD COLUMN password_hash TEXT');
   return db;
 }

@@ -79,6 +79,25 @@ export function createBookingService({ repository, paymentGateway, now = () => n
       }
     },
 
+    // The caller's own bookings, newest first, each with enough about the event
+    // and tier to show a ticket without another request.
+    async listMine(actorId) {
+      const bookings = await repository.listBookingsForUser(requireActor(actorId));
+      return Promise.all(
+        bookings.map(async (booking) => {
+          const [event, tier] = await Promise.all([
+            repository.findEvent(booking.eventId),
+            repository.findTier(booking.tierId),
+          ]);
+          return {
+            ...toPublicBooking(booking),
+            event: event && { title: event.title, city: event.city, venue: event.venue, startsAt: event.startsAt },
+            tierName: tier?.name,
+          };
+        }),
+      );
+    },
+
     async getBooking(actorId, reference) {
       return toPublicBooking(await getOwnBooking(requireActor(actorId), reference));
     },

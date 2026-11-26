@@ -5,7 +5,7 @@ import { Router } from '../src/http/router.js';
 import { registerApiRoutes } from '../src/http/routes.js';
 
 describe('OpenAPI document', () => {
-  const router = registerApiRoutes(new Router(), { eventService: {}, bookingService: {} });
+  const router = registerApiRoutes(new Router(), { eventService: {}, bookingService: {}, authService: {}, authSecret: 'test-secret-test-secret' });
   router.get('/health', () => {});
 
   const operations = Object.entries(openApiDocument.paths).flatMap(([path, methods]) =>
@@ -22,6 +22,11 @@ describe('OpenAPI document', () => {
   it('documents every API route', () => {
     const expected = [
       'GET /health',
+      'POST /api/auth/signup',
+      'POST /api/auth/login',
+      'GET /api/auth/me',
+      'GET /api/my/events',
+      'GET /api/bookings',
       'POST /api/events',
       'GET /api/events',
       'GET /api/events/{id}',

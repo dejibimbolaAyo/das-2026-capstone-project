@@ -9,10 +9,16 @@ import { createTicketingServer } from '../src/server.js';
 import { createMockPaymentGateway } from '../src/lib/mockPaymentGateway.js';
 import { createMemoryRepository } from '../src/repositories/memory.js';
 import { createSqliteRepository } from '../src/repositories/sqlite.js';
+import { signToken } from '../src/lib/token.js';
 
 const ORGANIZER = 'org-1';
 const ADA = 'ada';
 const BAYO = 'bayo';
+
+const SECRET = 'test-secret-test-secret';
+// Every name in these tests becomes a user with a signed token. Names starting
+// with "org" are organizers, the rest are attendees.
+const tokenFor = (user) => signToken({ sub: user, role: user.startsWith('org') ? 'organizer' : 'attendee' }, SECRET);
 
 const REPOSITORIES = { memory: createMemoryRepository, sqlite: createSqliteRepository };
 
@@ -26,7 +32,7 @@ for (const [name, makeRepository] of Object.entries(REPOSITORIES)) {
     beforeEach(async () => {
       if (server) await new Promise((resolve) => server.close(resolve));
       gateway = createMockPaymentGateway();
-      server = createTicketingServer({ repository: makeRepository(), paymentGateway: gateway });
+      server = createTicketingServer({ repository: makeRepository(), paymentGateway: gateway, authSecret: SECRET });
       await new Promise((resolve, reject) => {
         server.once('error', reject);
         server.listen(0, '127.0.0.1', resolve);
@@ -40,7 +46,7 @@ for (const [name, makeRepository] of Object.entries(REPOSITORIES)) {
 
     async function call(method, path, { user, body } = {}) {
       const headers = {};
-      if (user) headers['x-user-id'] = user;
+      if (user) headers.authorization = `Bearer ${tokenFor(user)}`;
       if (body !== undefined) headers['content-type'] = 'application/json';
       const response = await fetch(`${baseUrl}${path}`, {
         method,
@@ -119,7 +125,7 @@ for (const [name, makeRepository] of Object.entries(REPOSITORIES)) {
         });
       }
 
-      it('requires the x-user-id header', async () => {
+      it('requires a login token', async () => {
         const result = await call('POST', '/api/events', { body: { title: 'T', city: 'Lagos', startsAt: '2026-12-05' } });
         assertError(result, 401, 'UNAUTHENTICATED');
       });
@@ -233,6 +239,33 @@ for (const [name, makeRepository] of Object.entries(REPOSITORIES)) {
         assert.equal(titles(await call('GET', '/api/events?to=2026-12-04')).length, 0);
       });
 
+      it('returns total, limit and offset beside the events', async () => {
+        const { body } = await call('GET', '/api/events?sort=date');
+        assert.equal(body.total, 3);
+        assert.equal(body.limit, 20);
+        assert.equal(body.offset, 0);
+      });
+
+      it('pages through the results without repeating or skipping any', async () => {
+        const first = await call('GET', '/api/events?sort=date&limit=2');
+        assert.deepEqual(titles(first), ['Lagos Art Fair', 'Lagos Tech Meetup']);
+        assert.equal(first.body.total, 3);
+        const second = await call('GET', '/api/events?sort=date&limit=2&offset=2');
+        assert.deepEqual(titles(second), ['Abuja Jazz Night']);
+        assert.equal(second.body.total, 3);
+        assert.deepEqual(titles(await call('GET', '/api/events?sort=date&limit=2&offset=10')), []);
+      });
+
+      it('caps the page size at 100', async () => {
+        assert.equal((await call('GET', '/api/events?limit=5000')).body.limit, 100);
+      });
+
+      for (const query of ['limit=0', 'limit=-1', 'limit=abc', 'limit=2.5', 'offset=-1', 'offset=x']) {
+        it(`rejects ${query} with VALIDATION`, async () => {
+          assertError(await call('GET', `/api/events?${query}`), 400, 'VALIDATION');
+        });
+      }
+
       for (const query of ['from=yesterday', 'maxPriceCents=12.5', 'maxPriceCents=abc', 'sort=random']) {
         it(`rejects ${query} with VALIDATION`, async () => {
           assertError(await call('GET', `/api/events?${query}`), 400, 'VALIDATION');
@@ -317,7 +350,7 @@ for (const [name, makeRepository] of Object.entries(REPOSITORIES)) {
       it('two pay requests at the same moment still charge only once', async () => {
         const slowGateway = createMockPaymentGateway({ delayMs: 20 });
         await new Promise((resolve) => server.close(resolve));
-        server = createTicketingServer({ repository: makeRepository(), paymentGateway: slowGateway });
+        server = createTicketingServer({ repository: makeRepository(), paymentGateway: slowGateway, authSecret: SECRET });
         await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
         baseUrl = `http://127.0.0.1:${server.address().port}`;
 

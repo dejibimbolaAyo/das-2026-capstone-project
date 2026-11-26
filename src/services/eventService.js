@@ -6,9 +6,12 @@ import { searchEvents, summarizeEvent } from '../domain/eventSearch.js';
 import { newId } from '../domain/ids.js';
 import { requireDate, requireText, requireWholeNumber } from '../domain/validation.js';
 
+export const DEFAULT_PAGE_SIZE = 20;
+export const MAX_PAGE_SIZE = 100;
+
 export function requireActor(actorId) {
   if (typeof actorId !== 'string' || actorId.trim() === '') {
-    throw new DomainError('UNAUTHENTICATED', 'Say who you are with the x-user-id header');
+    throw new DomainError('UNAUTHENTICATED', 'Log in first');
   }
   return actorId.trim();
 }
@@ -100,12 +103,28 @@ export function createEventService({ repository }) {
       return withTiers(event);
     },
 
+    // The organizer's own events, drafts included, for their dashboard.
+    async listOwnEvents(actorId) {
+      const events = await repository.listEventsByOrganizer(requireActor(actorId));
+      return Promise.all(events.map(withTiers));
+    },
+
     async searchPublishedEvents(criteria = {}, sortBy = 'date') {
       const published = (await repository.listEvents()).filter((event) => event.status === 'published');
       const summaries = await Promise.all(
         published.map(async (event) => summarizeEvent(event, await repository.listTiersForEvent(event.id))),
       );
       return searchEvents(summaries, criteria, sortBy);
+    },
+
+    // One page of the search. The caller says how many (limit) and where to start
+    // (offset). total is the number of matches before paging, so a screen can say
+    // "Showing 20 of 1,342" and know when to stop asking for more.
+    async searchPublishedEventsPage(criteria = {}, sortBy = 'date', { limit, offset } = {}) {
+      const pageSize = limit === undefined ? DEFAULT_PAGE_SIZE : Math.min(requireWholeNumber(limit, 'limit', 1), MAX_PAGE_SIZE);
+      const start = offset === undefined ? 0 : requireWholeNumber(offset, 'offset', 0);
+      const all = await this.searchPublishedEvents(criteria, sortBy);
+      return { events: all.slice(start, start + pageSize), total: all.length, limit: pageSize, offset: start };
     },
   };
 }
