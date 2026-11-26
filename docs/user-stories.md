@@ -35,6 +35,33 @@ Each Build is one sprint. The "Build" column says which build finishes the story
 
 ## Acceptance criteria for the stories that matter most
 
+### S05: Search, filter and sort events (Build 2)
+
+- **Given** a list of events
+  **When** a visitor searches for text
+  **Then** events whose title, city or venue contains that text (ignoring letter case) are returned.
+- **Given** city, start-date, end-date and price filters
+  **When** a visitor uses any combination of them
+  **Then** only matching events are returned; dates include the whole day when entered as `YYYY-MM-DD`, and a price range matches an event if any tier is in that range.
+- **Given** events with ticket tiers
+  **When** a visitor sorts by date, price or availability
+  **Then** results are sorted by start time, cheapest tier price or total seats left, respectively; equal values stay in their original order.
+- **Given** any search or sort
+  **When** it finishes
+  **Then** it returns a new list and leaves the original event list unchanged.
+- **Given** an event without ticket tiers
+  **When** events are sorted by price or availability
+  **Then** it is treated as having no price and zero seats left.
+
+### S16: Automated tests (Build 2)
+
+- **Given** the project has no outside packages
+  **When** a developer runs `npm test`
+  **Then** Node's built-in test runner executes the automated tests and exits successfully when they pass.
+- **Given** a search or sorting rule
+  **When** its tests run
+  **Then** the expected results, unchanged input list and stable ordering are checked.
+
 ### S06: Book tickets
 
 - **Given** a published event with 3 seats left in General
