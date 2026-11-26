@@ -3,12 +3,14 @@ import { Link as RouterLink, useParams } from 'react-router-dom';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import Checkout from '../components/Checkout.jsx';
 import TicketForm from '../components/TicketForm.jsx';
+import { useAuth } from '../auth/AuthContext.jsx';
 import { useEvent } from '../hooks/useEvent.js';
 import { formatDate } from '../lib/format.js';
 
 export default function EventPage() {
   const { id } = useParams();
   const { event, status } = useEvent(id);
+  const { user } = useAuth();
   const [booking, setBooking] = useState(null);
 
   if (status === 'loading') return <Typography role="status">Loading event…</Typography>;
@@ -29,7 +31,16 @@ export default function EventPage() {
         </Typography>
       </Box>
 
-      {booking ? (
+      {!user ? (
+        <Alert
+          severity="info"
+          action={<Button color="inherit" component={RouterLink} to="/login" state={{ from: `/events/${id}` }}>Log in to book</Button>}
+        >
+          Log in or create an account to buy tickets.
+        </Alert>
+      ) : user.role !== 'attendee' ? (
+        <Alert severity="info">You are logged in as {user.role}. Only attendee accounts can buy tickets.</Alert>
+      ) : booking ? (
         <Checkout booking={booking} event={event} onRestart={() => setBooking(null)} />
       ) : (
         <TicketForm event={event} onBooked={setBooking} />

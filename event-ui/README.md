@@ -33,3 +33,19 @@ Vite forwards `/api` to the Node server (see `vite.config.js`), so the browser o
 - Until login arrives, `api.js` sends a fixed `x-user-id`.
 - The server does not send a hold-until time yet, so `api.js` works it out from the creation time plus 10 minutes. The countdown only disables Pay: the server does not release held seats yet.
 - `npm run build` writes `dist/`. Serving it from the Node server comes later.
+
+## Build 9: accounts and roles
+
+The app now has login and signup. Start the API with a secret so logins survive restarts:
+
+```
+AUTH_SECRET=some-long-random-text npm start      # in the repo root
+npm run dev                                       # in event-ui
+```
+
+- Attendees: browse, book, pay, and see **My tickets**.
+- Organizers: **My events** (create, add tiers, publish).
+- Staff: a placeholder page until Build 11 (QR check-in).
+
+The server enforces every role. Hiding a link in the UI is only courtesy.
+Seeded events belong to a demo organizer with no password, so sign up as an organizer and create your own.

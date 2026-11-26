@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   Alert,
   Box,
+  Button,
   FormControl,
   FormControlLabel,
   InputLabel,
@@ -19,7 +20,7 @@ import { useEvents } from '../hooks/useEvents.js';
 const CITIES = ['Lagos', 'Abuja', 'Ibadan', 'Port Harcourt'];
 
 // One place decides what the results area shows: loading, error, empty or the list.
-function Results({ events, status, error }) {
+function Results({ events, total, status, error, hasMore, loadMore, loadingMore, loadMoreError }) {
   if (status === 'loading') {
     return (
       <Box>
@@ -38,23 +39,34 @@ function Results({ events, status, error }) {
   if (status === 'empty') return <Typography role="status">No events match. Try clearing a filter.</Typography>;
 
   return (
-    <Box
-      component="ul"
-      sx={{
-        display: 'grid',
-        gap: 2,
-        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
-        listStyle: 'none',
-        p: 0,
-        m: 0,
-      }}
-    >
-      {events.map((event) => (
-        <li key={event.id}>
-          <EventCard event={event} />
-        </li>
-      ))}
-    </Box>
+    <Stack spacing={2}>
+      <Typography role="status" color="text.secondary">
+        Showing {events.length.toLocaleString()} of {total.toLocaleString()} events
+      </Typography>
+      <Box
+        component="ul"
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' },
+          listStyle: 'none',
+          p: 0,
+          m: 0,
+        }}
+      >
+        {events.map((event) => (
+          <li key={event.id}>
+            <EventCard event={event} />
+          </li>
+        ))}
+      </Box>
+      {loadMoreError && <Alert severity="error">Could not load more. {loadMoreError}</Alert>}
+      {hasMore && (
+        <Button variant="outlined" onClick={loadMore} disabled={loadingMore} sx={{ alignSelf: 'center' }}>
+          {loadingMore ? 'Loading…' : 'Load more'}
+        </Button>
+      )}
+    </Stack>
   );
 }
 
@@ -63,7 +75,7 @@ export default function Home() {
   const [city, setCity] = useState('');
   const [sort, setSort] = useState('date');
   const [onlyAvailable, setOnlyAvailable] = useState(false);
-  const { events, status, error } = useEvents({ q, city, onlyAvailable, sort });
+  const list = useEvents({ q, city, onlyAvailable, sort });
 
   return (
     <Stack spacing={3}>
@@ -103,7 +115,7 @@ export default function Home() {
         />
       </Stack>
 
-      <Results events={events} status={status} error={error} />
+      <Results {...list} />
     </Stack>
   );
 }
