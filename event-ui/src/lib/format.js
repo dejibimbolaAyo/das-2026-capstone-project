@@ -18,3 +18,11 @@ export function formatCountdown(totalSeconds) {
   const seconds = String(safe % 60).padStart(2, '0');
   return `${minutes}:${seconds}`;
 }
+
+// "2500" or "2,500.50" -> 250000 / 250050 whole cents, or null if it is not money.
+// Strings, not floats: 19.99 * 100 is 1998.9999999999998 in JavaScript.
+export function parseMoneyToCents(text) {
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(String(text).replace(/,/g, '').trim());
+  if (!match) return null;
+  return Number(match[1]) * 100 + Number((match[2] ?? '').padEnd(2, '0'));
+}

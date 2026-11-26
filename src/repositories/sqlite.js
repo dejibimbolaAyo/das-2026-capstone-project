@@ -13,6 +13,15 @@ function withoutNulls(record) {
   return Object.fromEntries(Object.entries(record).filter(([, value]) => value !== null));
 }
 
+const toUser = (row) =>
+  row && {
+    id: row.id,
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    passwordHash: row.password_hash,
+  };
+
 const toEvent = (row) =>
   row && {
     id: row.id,
@@ -54,6 +63,11 @@ const toBooking = (row) =>
 export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
   const sql = {
     ensureUser: db.prepare('INSERT OR IGNORE INTO users (id) VALUES (?)'),
+    insertUser: db.prepare(
+      'INSERT INTO users (id, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)',
+    ),
+    findUserByEmail: db.prepare('SELECT * FROM users WHERE email = ?'),
+    findUserById: db.prepare('SELECT * FROM users WHERE id = ?'),
 
     insertEvent: db.prepare(
       `INSERT INTO events (id, organizer_id, title, city, venue, starts_at, status)
@@ -65,6 +79,7 @@ export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
        WHERE id = ?`,
     ),
     listEvents: db.prepare('SELECT * FROM events ORDER BY rowid'),
+    listEventsByOrganizer: db.prepare('SELECT * FROM events WHERE organizer_id = ? ORDER BY rowid'),
 
     insertTier: db.prepare(
       `INSERT INTO ticket_tiers (id, event_id, name, price_cents, capacity, sold)
@@ -91,6 +106,7 @@ export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ),
     findBookingByReference: db.prepare('SELECT * FROM bookings WHERE reference = ?'),
+    listBookingsForUser: db.prepare('SELECT * FROM bookings WHERE user_id = ? ORDER BY created_at DESC, rowid DESC'),
     updateBooking: db.prepare(
       `UPDATE bookings SET status = ?, charge_id = ?, paid_at = ?, cancelled_at = ?
        WHERE reference = ?`,
@@ -102,6 +118,17 @@ export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
   const findBooking = (reference) => toBooking(sql.findBookingByReference.get(reference));
 
   return {
+    async insertUser(user) {
+      sql.insertUser.run(user.id, user.name, user.email, user.role, user.passwordHash);
+      return toUser(sql.findUserById.get(user.id));
+    },
+    async findUserByEmail(email) {
+      return toUser(sql.findUserByEmail.get(email));
+    },
+    async findUserById(id) {
+      return toUser(sql.findUserById.get(id));
+    },
+
     async insertEvent(event) {
       sql.ensureUser.run(event.organizerId);
       sql.insertEvent.run(
@@ -124,6 +151,9 @@ export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
     },
     async listEvents() {
       return sql.listEvents.all().map(toEvent);
+    },
+    async listEventsByOrganizer(organizerId) {
+      return sql.listEventsByOrganizer.all(organizerId).map(toEvent);
     },
 
     async insertTier(tier) {
@@ -170,6 +200,9 @@ export function createSqliteRepository({ path, db = openDatabase(path) } = {}) {
     },
     async findBookingByReference(reference) {
       return findBooking(reference);
+    },
+    async listBookingsForUser(userId) {
+      return sql.listBookingsForUser.all(userId).map(toBooking);
     },
     async updateBooking(booking) {
       sql.updateBooking.run(

@@ -47,9 +47,14 @@ export default function Checkout({ booking, event, onRestart }) {
         <Typography>
           {paid.quantity} × {tier.name} for {event.title}. Paid {formatMoney(paid.amountCents)}.
         </Typography>
-        <Button component={RouterLink} to="/" variant="outlined" sx={{ alignSelf: 'flex-start' }}>
-          Back to events
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button component={RouterLink} to="/tickets" variant="contained">
+            My tickets
+          </Button>
+          <Button component={RouterLink} to="/" variant="outlined">
+            Back to events
+          </Button>
+        </Stack>
       </Stack>
     );
   }

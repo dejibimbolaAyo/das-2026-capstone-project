@@ -14,6 +14,7 @@
     "benchmark": "node scripts/benchmark-lookup.js",
     "export:openapi": "node scripts/export-openapi.js",
     "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "seed:bulk": "node --disable-warning=ExperimentalWarning scripts/seed-bulk.js",
     "oversell": "node --disable-warning=ExperimentalWarning scripts/oversell-demo.js"
   }
 }

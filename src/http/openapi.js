@@ -11,8 +11,8 @@ const errorResponse = (description, codes) => ({
   ...json(ref('Error')),
 });
 
-// Calls that need to know who you are. Scalar shows an "x-user-id" box for these.
-const asUser = [{ UserId: [] }];
+// Calls that need a logged-in user. Log in at POST /api/auth/login, then send the token as a bearer token.
+const asUser = [{ BearerAuth: [] }];
 const anyone = [];
 const eventIdParam = { name: 'id', in: 'path', required: true, description: 'Event id', schema: { type: 'string' } };
 const referenceParam = {
@@ -25,8 +25,8 @@ const referenceParam = {
 
 const errors = {
   validation: errorResponse('The input is missing or wrong.', ['VALIDATION', 'INVALID_JSON']),
-  unauthenticated: errorResponse('No `x-user-id` header.', ['UNAUTHENTICATED']),
-  forbidden: errorResponse('You are not the owner.', ['FORBIDDEN']),
+  unauthenticated: errorResponse('No token, or the token is edited or expired.', ['UNAUTHENTICATED']),
+  forbidden: errorResponse('Your role is not allowed to do this, or the thing is not yours.', ['FORBIDDEN']),
   notFound: errorResponse('It does not exist (or is a draft you cannot see).', ['NOT_FOUND']),
 };
 
@@ -34,13 +34,13 @@ export const openApiDocument = {
   openapi: '3.1.0',
   info: {
     title: 'Event Ticketing API',
-    version: '0.5.0',
+    version: '0.9.0',
     description: [
       'The Build 4 API: create events and ticket tiers, publish them, search, book, pay with a mock card and cancel.',
       '',
       'Since Build 5, data is stored in **SQLite** (`data/ticketing.db`) and survives a restart. When many people book the last seats at the same moment, exactly enough of them succeed and the rest get `SOLD_OUT`.',
       '',
-      '**Who you are.** Until Build 7 adds login, send an `x-user-id` header on every call that changes data.',
+      '**Who you are.** Sign up or log in to get a token, then send `Authorization: Bearer <token>`. There are three roles: `attendee` (books and pays), `organizer` (creates and publishes events) and `staff`. The server checks the role on every call.',
       '',
       '**Money** is always a whole number of the smallest unit (kobo or cents): `500000` is 5,000.00.',
       '',
@@ -49,6 +49,7 @@ export const openApiDocument = {
   },
   servers: [{ url: '/', description: 'This server' }],
   tags: [
+    { name: 'Accounts', description: 'Sign up, log in and say who you are.' },
     { name: 'Events', description: 'Organizers create and publish events. Anyone can search published ones.' },
     { name: 'Bookings', description: 'Attendees book, pay and cancel. Only the person who made a booking can see or change it.' },
     { name: 'System' },
@@ -61,6 +62,58 @@ export const openApiDocument = {
         operationId: 'health',
         security: anyone,
         responses: { 200: { description: 'The server is up.', ...json({ type: 'object', properties: { status: { const: 'ok' } } }) } },
+      },
+    },
+    '/api/auth/signup': {
+      post: {
+        tags: ['Accounts'],
+        summary: 'Sign up',
+        description: 'Creates an account and returns a token. The password is stored only as a hash. (S01)',
+        operationId: 'signup',
+        security: anyone,
+        requestBody: { required: true, ...json(ref('NewAccount')) },
+        responses: {
+          201: { description: 'The new user and a signed token.', ...json(ref('AuthResult')) },
+          400: errors.validation,
+          409: errorResponse('That email is already registered.', ['EMAIL_TAKEN']),
+        },
+      },
+    },
+    '/api/auth/login': {
+      post: {
+        tags: ['Accounts'],
+        summary: 'Log in',
+        description: 'A wrong password and an unknown email give the same error, so the form cannot be used to find out who has an account. (S01)',
+        operationId: 'login',
+        security: anyone,
+        requestBody: { required: true, ...json(ref('Credentials')) },
+        responses: {
+          200: { description: 'The user and a signed token.', ...json(ref('AuthResult')) },
+          401: errorResponse('Wrong email or password.', ['INVALID_CREDENTIALS']),
+        },
+      },
+    },
+    '/api/auth/me': {
+      get: {
+        tags: ['Accounts'],
+        summary: 'Who am I',
+        operationId: 'me',
+        security: asUser,
+        responses: { 200: { description: 'The logged-in user.', ...json(ref('User')) }, 401: errors.unauthenticated },
+      },
+    },
+    '/api/my/events': {
+      get: {
+        tags: ['Events'],
+        summary: 'My events',
+        description: 'The organizer\'s own events, drafts included.',
+        operationId: 'listMyEvents',
+        security: asUser,
+        responses: {
+          200: { description: 'Your events.', ...json({ type: 'object', properties: { events: { type: 'array', items: ref('EventDetail') } } }) },
+          401: errors.unauthenticated,
+          403: errors.forbidden,
+        },
       },
     },
     '/api/events': {
@@ -101,11 +154,21 @@ export const openApiDocument = {
           },
           { name: 'onlyAvailable', in: 'query', description: 'Only events with seats left.', schema: { type: 'boolean' } },
           { name: 'sort', in: 'query', schema: { type: 'string', enum: ['date', 'price', 'availability'], default: 'date' } },
+          { name: 'limit', in: 'query', description: 'How many events to return. At most 100.', schema: { type: 'integer', minimum: 1, maximum: 100, default: 20 } },
+          { name: 'offset', in: 'query', description: 'How many matches to skip, for the next page.', schema: { type: 'integer', minimum: 0, default: 0 } },
         ],
         responses: {
           200: {
             description: 'Matching events. Ties are broken by title, then id.',
-            ...json({ type: 'object', properties: { events: { type: 'array', items: ref('EventSummary') } } }),
+            ...json({
+              type: 'object',
+              properties: {
+                events: { type: 'array', items: ref('EventSummary') },
+                total: { type: 'integer', description: 'All matches, before paging.' },
+                limit: { type: 'integer' },
+                offset: { type: 'integer' },
+              },
+            }),
           },
           400: errors.validation,
         },
@@ -117,8 +180,8 @@ export const openApiDocument = {
         summary: 'View an event',
         description: 'A published event, or your own draft. Includes each tier with its seats left.',
         operationId: 'getEvent',
-        // Anyone can view a published event; send x-user-id to see your own draft.
-        security: [{}, { UserId: [] }],
+        // Anyone can view a published event; send your token to see your own draft.
+        security: [{}, { BearerAuth: [] }],
         parameters: [eventIdParam],
         responses: { 200: { description: 'The event and its tiers.', ...json(ref('EventDetail')) }, 404: errors.notFound },
       },
@@ -175,6 +238,18 @@ export const openApiDocument = {
       },
     },
     '/api/bookings': {
+      get: {
+        tags: ['Bookings'],
+        summary: 'My bookings',
+        description: 'Only the caller\'s own bookings, newest first, with the event and tier name. (S13)',
+        operationId: 'listMyBookings',
+        security: asUser,
+        responses: {
+          200: { description: 'Your bookings.', ...json({ type: 'object', properties: { bookings: { type: 'array', items: ref('BookingWithEvent') } } }) },
+          401: errors.unauthenticated,
+          403: errors.forbidden,
+        },
+      },
       post: {
         tags: ['Bookings'],
         summary: 'Book tickets',
@@ -260,11 +335,10 @@ export const openApiDocument = {
   },
   components: {
     securitySchemes: {
-      UserId: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-user-id',
-        description: 'Who is calling, for example `ada` or `org-1`. Stands in for login until Build 7.',
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        description: 'The token from signup or login.',
       },
     },
     schemas: {
@@ -281,6 +355,34 @@ export const openApiDocument = {
             },
           },
         },
+      },
+      NewAccount: {
+        type: 'object',
+        required: ['name', 'email', 'password'],
+        properties: {
+          name: { type: 'string', example: 'Ada Obi' },
+          email: { type: 'string', example: 'ada@example.com' },
+          password: { type: 'string', minLength: 8, example: 'correct horse battery' },
+          role: { type: 'string', enum: ['attendee', 'organizer', 'staff'], default: 'attendee' },
+        },
+      },
+      Credentials: {
+        type: 'object',
+        required: ['email', 'password'],
+        properties: { email: { type: 'string' }, password: { type: 'string' } },
+      },
+      User: {
+        type: 'object',
+        properties: {
+          id: { type: 'string' },
+          name: { type: 'string' },
+          email: { type: 'string' },
+          role: { type: 'string', enum: ['attendee', 'organizer', 'staff'] },
+        },
+      },
+      AuthResult: {
+        type: 'object',
+        properties: { token: { type: 'string' }, user: ref('User') },
       },
       NewEvent: {
         type: 'object',
@@ -340,6 +442,26 @@ export const openApiDocument = {
         type: 'object',
         required: ['tierId', 'quantity'],
         properties: { tierId: { type: 'string' }, quantity: { type: 'integer', minimum: 1, maximum: 10, example: 2 } },
+      },
+      BookingWithEvent: {
+        allOf: [
+          ref('Booking'),
+          {
+            type: 'object',
+            properties: {
+              tierName: { type: 'string' },
+              event: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  city: { type: 'string' },
+                  venue: { type: 'string' },
+                  startsAt: { type: 'string', format: 'date-time' },
+                },
+              },
+            },
+          },
+        ],
       },
       Booking: {
         type: 'object',

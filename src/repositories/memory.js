@@ -9,11 +9,26 @@
 const copy = (record) => (record === undefined ? undefined : structuredClone(record));
 
 export function createMemoryRepository() {
+  const users = new Map(); // userId -> user
   const events = new Map(); // eventId -> event
   const tiers = new Map(); // tierId -> tier
   const bookings = new Map(); // reference -> booking  (O(1) lookup by reference)
 
   return {
+    async insertUser(user) {
+      if ([...users.values()].some((existing) => existing.email === user.email)) {
+        throw new Error('UNIQUE constraint failed: users.email');
+      }
+      users.set(user.id, copy(user));
+      return copy(user);
+    },
+    async findUserByEmail(email) {
+      return copy([...users.values()].find((user) => user.email === email));
+    },
+    async findUserById(id) {
+      return copy(users.get(id));
+    },
+
     async insertEvent(event) {
       events.set(event.id, copy(event));
       return copy(event);
@@ -27,6 +42,9 @@ export function createMemoryRepository() {
     },
     async listEvents() {
       return [...events.values()].map(copy);
+    },
+    async listEventsByOrganizer(organizerId) {
+      return [...events.values()].filter((event) => event.organizerId === organizerId).map(copy);
     },
 
     async insertTier(tier) {
@@ -66,6 +84,10 @@ export function createMemoryRepository() {
     },
     async findBookingByReference(reference) {
       return copy(bookings.get(reference));
+    },
+    async listBookingsForUser(userId) {
+      // Newest first, the same order as sqlite.js.
+      return [...bookings.values()].filter((booking) => booking.userId === userId).reverse().map(copy);
     },
     async updateBooking(booking) {
       bookings.set(booking.reference, copy(booking));
