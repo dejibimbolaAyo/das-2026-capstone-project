@@ -136,8 +136,10 @@ describe('inventory', () => {
 
     it('rejects a booking bigger than the seats left, and changes nothing', () => {
       bookTickets(store, tier.id, 'ada', 2);
+      const bookingCount = store.bookings.size;
       throwsCode(() => bookTickets(store, tier.id, 'bayo', 2), 'SOLD_OUT');
       assert.equal(seatsLeft(tier), 1);
+      assert.equal(store.bookings.size, bookingCount);
     });
 
     it('lets the last ticket be booked, then reports sold out', () => {

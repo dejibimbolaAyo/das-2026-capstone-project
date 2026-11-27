@@ -8,8 +8,9 @@ function dateBound(value, endOfDay = false) {
   }
 
   const datePart = value.slice(0, 10);
-  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(datePart);
-  if (!dateOnly || (value.length > 10 && value[10] !== 'T')) {
+  const validDatePart = /^\d{4}-\d{2}-\d{2}$/.test(datePart);
+  const dateOnly = value.length === 10;
+  if (!validDatePart || (!dateOnly && value[10] !== 'T')) {
     throw new DomainError('VALIDATION', 'Date filters must be ISO date strings');
   }
 

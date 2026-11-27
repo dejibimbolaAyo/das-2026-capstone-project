@@ -67,6 +67,16 @@ test('date-only end filters include events through the end of that day', () => {
   );
 });
 
+test('timestamp date bounds include events exactly at the boundary', () => {
+  assert.deepEqual(
+    filterEvents(summaries, {
+      from: '2026-12-08T19:00:00.000Z',
+      to: '2026-12-08T19:00:00.000Z',
+    }).map((event) => event.id),
+    ['event-b'],
+  );
+});
+
 test('availability sorting puts the most seats left first and can filter sold-out events', () => {
   assert.deepEqual(sortEvents(summaries, 'availability').map((event) => event.id), [
     'event-a', 'event-b', 'event-d', 'event-c',
@@ -101,7 +111,7 @@ test('filtering, sorting and searching do not change the original list', () => {
 });
 
 test('invalid dates, fractional prices and unknown sort options use VALIDATION errors', () => {
-  for (const badDate of ['not-a-date', '2026-02-30']) {
+  for (const badDate of ['not-a-date', '2026-02-30', '2026-02-30T12:00:00Z']) {
     assert.throws(
       () => filterEvents(summaries, { from: badDate }),
       (error) => error instanceof DomainError && error.code === 'VALIDATION',
@@ -112,7 +122,7 @@ test('invalid dates, fractional prices and unknown sort options use VALIDATION e
     (error) => error instanceof DomainError && error.code === 'VALIDATION',
   );
   assert.throws(
-    () => sortEvents(summaries, 'unknown'),
+    () => searchEvents(summaries, {}, 'unknown'),
     (error) => error instanceof DomainError && error.code === 'VALIDATION',
   );
 });
