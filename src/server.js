@@ -1,15 +1,22 @@
 import { pathToFileURL } from 'node:url';
-import { createAppServer } from './http/app.js';
-import { PORT } from './config.js';
+import { getPort } from './config.js';
+import { createApp } from './http/app.js';
 
-export function startServer(port = PORT) {
-  const server = createAppServer();
-  server.listen(port, () => {
-    console.log(`Event ticketing server listening on port ${port}`);
+export function startServer(options = {}) {
+  const port = options.port ?? getPort();
+  const host = options.host ?? '127.0.0.1';
+  const server = createApp(options);
+  server.listen(port, host, () => {
+    const address = server.address();
+    const actualPort = typeof address === 'object' && address ? address.port : port;
+    console.log(`Server listening on http://${host}:${actualPort}`);
   });
   return server;
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  startServer();
-}
+export { createApp };
+
+const isDirectRun = process.argv[1]
+  && pathToFileURL(process.argv[1]).href === import.meta.url;
+
+if (isDirectRun) startServer();

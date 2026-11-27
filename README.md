@@ -128,6 +128,22 @@ Read in this order:
 
 Follow the "Done when" list in [docs/build-1.md](docs/build-1.md). Work on a branch called `build-1`, add your first entry to `docs/ai-log.md`, and open a pull request into `main`.
 
+## Build 2: search, sort and test
+
+Run the automated tests with:
+
+```bash
+npm test
+```
+
+`listEventSummaries(store)` makes the small event records used by the pure functions in `src/domain/eventSearch.js`:
+
+- `filterEvents(summaries, criteria)` filters by `q` (title or venue), exact city, inclusive `from`/`to` dates, `maxPriceCents`, and `onlyAvailable`. A date-only `to` includes the whole UTC day. An event with no tiers is not included in a price filter.
+- `sortEvents(summaries, sortBy)` orders by earliest calendar date, cheapest tier price (no price last), or most seats left. Ties are broken by title then id.
+- `searchEvents(summaries, criteria, sortBy)` filters and then sorts.
+- These functions return new arrays and do not change the supplied list. `mergeSort` in `src/domain/sorting.js` splits the list, sorts each half, and merges the halves; it takes the earlier item when values compare equally, which keeps the sort stable.
+- Bad dates, non-whole-cent prices, and unknown sort options raise a `DomainError` with code `VALIDATION`.
+
 ## Documents
 
 - [docs/milestones.md](docs/milestones.md): the nine Builds at a glance, with a glossary.

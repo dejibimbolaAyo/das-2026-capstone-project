@@ -1,4 +1,4 @@
-# Build 2: Event search, sorting, backlog, first tests
+﻿# Build 2: Event search, sorting, backlog, first tests
 
 *Week 5 of the course. Starts from the finished state of Build 1.*
 
@@ -37,6 +37,16 @@
 ### S04: As an organizer, I want to publish and unpublish an event, so that I control when it goes public
 
 *Written by you, in pairs, during the Build 2 class. Add your three criteria here before you paste the AI prompt below.*
+
+- **Given** a draft event with at least one ticket tier
+  **When** the organizer publishes it
+  **Then** its status becomes published and it appears in the public list.
+- **Given** a draft event with no ticket tiers
+  **When** the organizer publishes it
+  **Then** the request is rejected with `INVALID_STATE` and the event stays a draft.
+- **Given** an event id that does not exist
+  **When** the organizer publishes it
+  **Then** the request is rejected with `NOT_FOUND`.
 
 ### S05: As an attendee, I want to search, filter and sort published events, so that I can find one I like
 
